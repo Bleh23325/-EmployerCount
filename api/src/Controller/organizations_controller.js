@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const db = require('../db/Connect');
+const jwt = require('jsonwebtoken');
 
 class organizationController {
     // создание организации
