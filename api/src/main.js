@@ -8,7 +8,7 @@ const filesRouter = require('./routes/files_route')
 const passportRouter = require('./routes/passport_route')      
 
 // задаём порт. значение после || задаёт порт в ручную, елси его нет в env
-const PORT = process.env.PORT || 2508
+const PORT = process.env.PORT || 5000
 const app = express()
 
 // без этого cors не будет работать
