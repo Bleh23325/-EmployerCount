@@ -2,23 +2,47 @@
     export default{
         name: 'UiInput',
         props:{
-            error:{
+            modelValue: {  // Добавь modelValue для v-model
+            type: [String, Number],
+            default: ''
+            },
+            error: {
             type: Boolean,
             default: false
             },
-            success:{
-                type:Boolean,
-                default: false
+            success: {
+            type: Boolean,
+            default: false
+            },
+            type: {  // Добавь поддержку type (для date, text и т.д.)
+            type: String,
+            default: 'text'
+            },
+            placeholder: {
+            type: String,
+            default: ''
+            },
+            maxlength: {
+            type: [String, Number],
+            default: null
             }
-        }
+        },
+        emits: ['update:modelValue'] 
     }
 </script>
 
 <template>
-    <input type="text" :class="{
-        'error':error,
-        'success':success
-    }" placeholder="placegolder"> 
+    <input
+        :type="type"
+        :value="modelValue"
+        :placeholder="placeholder"
+        :maxlength="maxlength"
+        :class="{
+        'error': error,
+        'success': success
+        }"
+        @input="$emit('update:modelValue', $event.target.value)"
+  />
 </template>
 
 <style scoped>
