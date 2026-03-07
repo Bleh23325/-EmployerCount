@@ -7,6 +7,9 @@
             <nav>
                 <router-link to="/employees">Сотрудники</router-link>
             </nav>
+            <nav>
+                <router-link to="/organizations">Организации</router-link>
+            </nav>
         </div>
     </Block>
     <Block>
