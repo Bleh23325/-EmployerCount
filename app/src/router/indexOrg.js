@@ -4,6 +4,9 @@ import CreateEmployeePage from '@/views/employees/CreateEmployeePage.vue'
 // Импортируем компоненты для организаций
 import OrganizationsPage from '@/views/organizations/OrganizationsPage.vue'
 import CreateOrganizationPage from '@/views/organizations/CreateOrganizationPage.vue'
+// Импортируем страницу редактирования организации 
+import EditOrganizationPage from '@/views/organizations/EditOrganizationPage.vue'
+
 
 const routes = [
   {
@@ -32,6 +35,12 @@ const routes = [
     path: '/organizations/create',
     name: 'CreateOrganization',
     component: CreateOrganizationPage
+  },
+  // Маршрут для редактирования организаций
+  {
+    path: '/organizations/edit/:id',
+    name: 'EditOrganization',
+    component: EditOrganizationPage
   }
 ]
 
