@@ -9,6 +9,11 @@ import EditOrganizationPage from '@/views/organizations/EditOrganizationPage.vue
 import DepartmentsPage from '@/views/departments/DepartmentsPage.vue'
 import CreateDepartmentPage from '@/views/departments/CreateDepartmentPage.vue'
 import EditDepartmentsPage from '@/views/departments/EditDepartmentsPage.vue'
+// Импортируем компоненты для должностей
+import PositionsPage from '@/views/positions/PositionsPage.vue'
+//import CreatePositionPage from '@/views/positions/CreatePositionPage.vue'
+//import EditPositionPage from '@/views/positions/EditPositionPage.vue'
+
 
 
 const routes = [
@@ -60,6 +65,21 @@ const routes = [
     path: '/departments/edit/:id',
     name: 'EditDepartment',
     component: EditDepartmentsPage
+  },
+  {
+    path: '/positions',
+    name: 'positions',
+    component: PositionsPage
+  },
+  {
+    path: '/positions/create',
+    name: 'CreatePosition',
+
+  },
+  {
+    path: '/positions/edit/:id',
+    name: 'EditPosition',
+    
   }
 ]
 
