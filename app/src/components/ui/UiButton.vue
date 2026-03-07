@@ -6,7 +6,7 @@
                 type: String,
                 default:'primary',
                 validator(value){
-                    return ['primary', 'secondary', 'accent'].includes(value)
+                    return ['primary', 'secondary', 'accent', 'danger'].includes(value)
                 }
             },
             outline:{
@@ -74,5 +74,16 @@
 .button:disabled, .button--disabled{
     opacity:0.5;
     cursor: not-allowed;
+}
+
+.button--danger{
+    background: #e62222;
+}
+.button--danger:hover:not(:disabled){
+    background:#d30700;
+    transform:translateY(-5px) ;
+}
+.button--danger:active:not(:disabled){
+    transform: scale(0.9) rotate(0.7deg);
 }
 </style>

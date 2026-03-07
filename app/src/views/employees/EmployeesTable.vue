@@ -36,33 +36,20 @@
 
                     </td>
                     <td>
-                        <Button @click="DeleteEmployee(employee.id)" class="deleteBtn">
-                            Удалить
+                        <Button @click="DeleteEmployee(employee.id)" variant="danger">
+                            Уволить
                         </Button>
                         <Button @click="DeleteEmployee(employee.id)" variant="accent">
-                            Добавить
+                            Изменить
                         </Button>
                     </td>
                 </tr>
             </tbody>
         </table>
-
-
-        <Modal v-model="showPassportModal" title="Паспортные данные">
-            <PassportDataView :passportData="selectedPassportData" v-if="selectedPassportData"/>
-        </Modal>
-
-        <Modal v-model="showAddressModal" title="Адрес регистрации">
-            <RegistrationAddressView :addressData="selecteAddressData" v-if="selectedAddressData"/>
-        </Modal>
-
-        <Modal v-model="showFilesModal" title="Файлы сотрудника">
-            <FilesView :files="selectedEmployeeFiles" :employeeId="selectedEmployeeId" v-if="selectedEmployeeFiles"/>
-        </Modal>
     </div>
 
 
- <!-- <PassportDataModal
+     <PassportDataModal
       v-model="showPassportModal"
       :data="selectedPassportData"
       @close="showPassportModal = false"
@@ -85,8 +72,7 @@
       @close="showFilesModal = false"
       @upload="handleUploadFile"
       @delete="handleDeleteFile"
-    />
-    
+    />   
     <ConfirmModal
       :show="showConfirmModal"
       :title="confirmTitle"
@@ -95,7 +81,7 @@
       @cancel="cancelConfirm"
     />
     
--->  
+
 
 </template>
 
@@ -114,10 +100,10 @@ import{
 import PassportDataView from './PassportDataView.vue'
 import RegistrationAddressView from './RegistrationAddressView.vue';
 import FilesView from './FilesView.vue';
-/*import PassportDataModal from './components/modals/PassportDataModal.vue';
+import PassportDataModal from './components/modals/PassportDataModal.vue';
 import AddressModal from './components/modals/AddressModal.vue';
 import FilesModal from './components/modals/FilesModal.vue';
-import ConfirmModal from './components/modals/ConfimModal.vue';*/
+import ConfirmModal from './components/modals/ConfimModal.vue';
 
 export default {
     name:'EmployeesTable',
@@ -127,10 +113,10 @@ export default {
         PassportDataView,
         RegistrationAddressView,
         FilesView,
-        /*PassportDataModal,
+        PassportDataModal,
         AddressModal,
         FilesModal,
-        ConfirmModal*/
+        ConfirmModal
     },
     setup(){
         const refreshEmployees = async () => {
@@ -184,6 +170,7 @@ export default {
                 const data = await employeesApi.getPassportData(passportDataId);
                 selectedPassportData.value = data;
                 showPassportModal.value = true;
+                showPassportModal.value = true;
             } catch (err) {
                 alert('Ошибка при загрузке паспортных данных');
             }
@@ -212,6 +199,16 @@ export default {
                 showFilesModal.value = true;
             } catch (err) {
                 alert('Ошибка при загрузке файлов');
+            }
+        };
+        const handleUpdatePassport = async (updatedData) => {
+            try {
+                await employeesApi.updatePassportData(updatedData.id, updatedData);
+                // Обновить данные в таблице
+                await loadEmployees();
+                showNotification('success', 'Успех', 'Паспортные данные обновлены');
+            } catch (error) {
+                showNotification('error', 'Ошибка', 'Не удалось обновить данные');
             }
         };
 
@@ -273,19 +270,5 @@ export default {
 
 
 
-.deleteBtn{
-    border:none;
-    border-radius:4px;
-    padding: 10px 20px;
-    margin: 10px 20px;
-    font-size: 1em;
-    cursor: pointer;
-    color:white;
-    transition:all 300ms ease;
-    background: #e62222;
-}
-.deleteBtn:hover:not(:disabled){
-    background:#d30700;
-    transform:translateY(-5px) ;
-}
+
 </style>
