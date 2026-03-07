@@ -1,25 +1,30 @@
 <template>
   <form @submit.prevent="onSubmit" class="organization-form">
-    <div class="form-group">
+    <div class="form-group" :class="{ 'has-error': errors.name || serverErrors.name }">
       <label for="name">Название организации *</label>
       <Input
         id="name"
         v-model="form.name"
         type="text"
         required
-        :class="{ 'error': errors.name }"
+        :class="{ 'error': errors.name || serverErrors.name }"
+        @input="clearFieldError('name')"
       />
       <span v-if="errors.name" class="error-text">{{ errors.name }}</span>
+      <span v-if="serverErrors.name" class="error-text">{{ serverErrors.name }}</span>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" :class="{ 'has-error': serverErrors.comment }">
       <label for="comment">Комментарий</label>
       <Input
         id="comment"
         v-model="form.comment"
         type="textarea"
         rows="3"
+        :class="{ 'error': serverErrors.comment }"
+        @input="clearFieldError('comment')"
       />
+      <span v-if="serverErrors.comment" class="error-text">{{ serverErrors.comment }}</span>
     </div>
 
     <div class="form-actions">
@@ -40,9 +45,13 @@ export default {
     initialData: {
       type: Object,
       default: () => ({ name: '', comment: '' })
+    },
+    serverErrors: {
+      type: Object,
+      default: () => ({})
     }
   },
-  emits: ['submit', 'cancel'],
+  emits: ['submit', 'cancel', 'update:serverErrors'],
   setup(props, { emit }) {
     const form = ref({
       name: props.initialData.name || '',
@@ -56,18 +65,32 @@ export default {
       return err;
     };
 
+    const clearFieldError = (field) => {
+      // очищаем клиентскую ошибку
+      if (errors.value[field]) errors.value[field] = null;
+      // очищаем серверную ошибку
+      if (props.serverErrors[field]) {
+        const newErrors = { ...props.serverErrors };
+        delete newErrors[field];
+        emit('update:serverErrors', newErrors);
+      }
+    };
+
     const onSubmit = () => {
       const err = validate();
       if (Object.keys(err).length) {
         errors.value = err;
         return;
       }
+      // сбрасываем серверные ошибки перед отправкой
+      emit('update:serverErrors', {});
       emit('submit', { ...form.value });
     };
 
     return {
       form,
       errors,
+      clearFieldError,
       onSubmit
     };
   }

@@ -5,12 +5,18 @@
       <Button @click="goBack" variant="secondary">Назад к списку</Button>
     </div>
     
-    <OrganizationForm @submit="handleSubmit" @cancel="goBack" />
+    <OrganizationForm 
+      @submit="handleSubmit" 
+      @cancel="goBack" 
+      :serverErrors="serverErrors"
+      @update:serverErrors="updateServerErrors"
+    />
   </div>
 </template>
 
 <script>
 import { useRouter } from 'vue-router';
+import { ref, getCurrentInstance } from 'vue';
 import { Button } from '@/components/index';
 import OrganizationForm from './components/OrganizationForm.vue';
 import { organizationsApi } from '@/services/organizationsApi';
@@ -23,24 +29,55 @@ export default {
   },
   setup() {
     const router = useRouter();
+    const serverErrors = ref({});
+    
+    // Получаем доступ к глобальному объекту уведомлений
+    const instance = getCurrentInstance();
+    const notify = instance?.appContext.config.globalProperties.$notify;
 
     const goBack = () => {
       router.push('/organizations');
     };
 
+    const updateServerErrors = (errors) => {
+      serverErrors.value = errors;
+    };
+
     const handleSubmit = async (organizationData) => {
       try {
         await organizationsApi.createOrganization(organizationData);
-        alert('Организация успешно создана');
+        if (notify) {
+          notify.success('Успешно', 'Организация успешно создана');
+        } else {
+          alert('Организация успешно создана'); // fallback
+        }
         router.push('/organizations');
       } catch (err) {
-        alert('Ошибка: ' + err.message);
+        console.error(err);
+        // Проверяем, есть ли ошибки валидации от сервера
+        if (err.response?.data?.errors) {
+          serverErrors.value = err.response.data.errors;
+          // Можно также показать уведомление, что есть ошибки в форме
+          if (notify) {
+            notify.error('Ошибка', 'Проверьте правильность заполнения полей');
+          }
+        } else {
+          // Общая ошибка
+          const message = err.response?.data?.message || err.message || 'Произошла ошибка';
+          if (notify) {
+            notify.error('Ошибка', message);
+          } else {
+            alert('Ошибка: ' + message);
+          }
+        }
       }
     };
 
     return {
       goBack,
-      handleSubmit
+      handleSubmit,
+      serverErrors,
+      updateServerErrors
     };
   }
 };
