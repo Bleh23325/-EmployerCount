@@ -6,8 +6,6 @@
       <thead>
         <tr>
           <th>Название</th>
-          <th>Отдел</th>
-          <th>Комментарий</th>
           <th>Дата создания</th>
           <th>Действия</th>
         </tr>
@@ -15,8 +13,6 @@
       <tbody>
         <tr v-for="pos in positions" :key="pos.id">
           <td>{{ pos.name }}</td>
-          <td>{{ pos.departmentName }}</td>
-          <td>{{ pos.comment || '—' }}</td>
           <td>{{ formatDate(pos.add_at) }}</td>
           <td>
             <Button @click="editPosition(pos.id)" variant="secondary">Редактировать</Button>
@@ -33,7 +29,6 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Button } from '@/components/index';
 import { positionsApi } from '@/services/positionsApi';
-import { departmentsApi } from '@/services/departmentsApi';
 import { getCurrentInstance } from 'vue';
 
 export default {
@@ -55,21 +50,8 @@ export default {
     const fetchPositions = async () => {
       try {
         loading.value = true;
-        
-        const [positionsData, departmentsData] = await Promise.all([
-          positionsApi.getPositions(),
-          departmentsApi.getDepartments()
-        ]);
-
-        const deptMap = {};
-        departmentsData.forEach(dept => { deptMap[dept.id] = dept.name; });
-
-        const enriched = positionsData.map(pos => ({
-          ...pos,
-          departmentName: deptMap[pos.id_department] || '—'
-        }));
-
-        positions.value = enriched.sort((a, b) => a.id - b.id);
+        const data = await positionsApi.getPositions();
+        positions.value = data.sort((a, b) => a.id - b.id);
       } catch (err) {
         console.error(err);
         error.value = err.message || 'Не удалось загрузить список должностей';
@@ -84,7 +66,7 @@ export default {
     };
 
     const editPosition = (id) => {
-      router.push(`/positions/edit/${id}`); 
+      router.push(`/positions/edit/${id}`);
     };
 
     const deletePosition = async (id) => {
