@@ -8,6 +8,7 @@ import CreateOrganizationPage from '@/views/organizations/CreateOrganizationPage
 import EditOrganizationPage from '@/views/organizations/EditOrganizationPage.vue'
 // Импортируем компоненты для отделов
 import DepartmentsPage from '@/views/departments/DepartmentsPage.vue'
+import CreateDepartmentPage from '@/views/departments/CreateDepartmentPage.vue'
 
 
 const routes = [
@@ -53,6 +54,7 @@ const routes = [
   {
     path: '/departments/create',
     name: 'CreateDepartment',
+    component: CreateDepartmentPage
   },
   {
     path: '/departments/edit/:id',

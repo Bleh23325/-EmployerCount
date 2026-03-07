@@ -5,10 +5,9 @@
     <table v-else class="departments-table">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Название</th>
-          <th>Организация (ID)</th>
-          <th>Родительский отдел (ID)</th>
+          <th>Организация</th>
+          <th>Родительский отдел</th>
           <th>Комментарий</th>
           <th>Дата создания</th>
           <th>Действия</th>
@@ -16,10 +15,9 @@
       </thead>
       <tbody>
         <tr v-for="dept in departments" :key="dept.id">
-          <td>{{ dept.id }}</td>
           <td>{{ dept.name }}</td>
-          <td>{{ dept.id_organization || '—' }}</td>
-          <td>{{ dept.parent || '—' }}</td>
+          <td>{{ dept.organizationName }}</td>
+          <td>{{ dept.parentName }}</td>
           <td>{{ dept.comment || '—' }}</td>
           <td>{{ formatDate(dept.add_at) }}</td>
           <td>
@@ -37,6 +35,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Button } from '@/components/index';
 import { departmentsApi } from '@/services/departmentsApi';
+import { organizationsApi } from '@/services/organizationsApi';
 import { getCurrentInstance } from 'vue';
 
 export default {
@@ -58,9 +57,29 @@ export default {
     const fetchDepartments = async () => {
       try {
         loading.value = true;
-        const data = await departmentsApi.getDepartments();
-        // Сортировка по id для стабильности
-        departments.value = data.sort((a, b) => a.id - b.id);
+        
+        // Загружаем отделы и организации одновременно
+        const [deptsData, orgsData] = await Promise.all([
+          departmentsApi.getDepartments(),
+          organizationsApi.getOrganizations()
+        ]);
+
+        // Создаём объекты для быстрого поиска названий по ID
+        const orgMap = {};
+        orgsData.forEach(org => { orgMap[org.id] = org.name; });
+
+        const deptMap = {};
+        deptsData.forEach(dept => { deptMap[dept.id] = dept.name; });
+
+        // Обогащаем данные отделов названиями
+        const enriched = deptsData.map(dept => ({
+          ...dept,
+          organizationName: orgMap[dept.id_organization] || '—',
+          parentName: dept.parent ? (deptMap[dept.parent] || '—') : '—'
+        }));
+
+        // Сортируем по id для стабильности (опционально)
+        departments.value = enriched.sort((a, b) => a.id - b.id);
       } catch (err) {
         console.error(err);
         error.value = err.message || 'Не удалось загрузить список отделов';
