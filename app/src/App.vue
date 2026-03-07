@@ -10,6 +10,9 @@
             <nav>
                 <router-link to="/organizations">Организации</router-link>
             </nav>
+            <nav>
+                <router-link to="/departments">Отделы</router-link>
+            </nav>
         </div>
     </Block>
     <Block>
