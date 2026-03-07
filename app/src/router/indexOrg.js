@@ -12,7 +12,7 @@ import EditDepartmentsPage from '@/views/departments/EditDepartmentsPage.vue'
 // Импортируем компоненты для должностей
 import PositionsPage from '@/views/positions/PositionsPage.vue'
 import CreatePositionsPage from '@/views/positions/CreatePositionsPage.vue'
-//import EditPositionPage from '@/views/positions/EditPositionPage.vue'
+import EditPositionsPage from '@/views/positions/EditPositionsPage.vue'
 
 
 
@@ -80,6 +80,7 @@ const routes = [
   {
     path: '/positions/edit/:id',
     name: 'EditPosition',
+    component: EditPositionsPage
 
   }
 ]
