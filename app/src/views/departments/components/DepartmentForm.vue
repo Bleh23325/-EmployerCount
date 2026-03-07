@@ -56,14 +56,14 @@
     </div>
 
     <div class="form-actions">
-      <Button type="submit" variant="primary">Создать отдел</Button>
+      <Button type="submit" variant="primary">{{ submitButtonText }}</Button>
       <Button type="button" variant="secondary" @click="$emit('cancel')">Отмена</Button>
     </div>
   </form>
 </template>
 
 <script>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, computed } from 'vue'; 
 import { Button, Input, Selector } from '@/components/index';
 import { organizationsApi } from '@/services/organizationsApi';
 import { departmentsApi } from '@/services/departmentsApi';
@@ -107,12 +107,11 @@ export default {
       }
     };
 
-    // Загрузка списка отделов 
+    // Загрузка списка отделов
     const loadDepartments = async () => {
       loadingDepartments.value = true;
       try {
         const allDepts = await departmentsApi.getDepartments();
-
         departments.value = allDepts;
       } catch (err) {
         console.error('Ошибка загрузки отделов:', err);
@@ -121,23 +120,24 @@ export default {
       }
     };
 
-    // Преобразуем в формат для Selector: { value, label }
-    const organizationOptions = ref([]);
-    const departmentOptions = ref([]);
+    // Опции для организации
+    const organizationOptions = computed(() => 
+      organizations.value.map(org => ({ value: org.id, label: org.name }))
+    );
 
-    watch(organizations, (newOrgs) => {
-      organizationOptions.value = newOrgs.map(org => ({
-        value: org.id,
-        label: org.name
-      }));
+    // Опции для родительского отдела с фильтрацией текущего отдела
+    const departmentOptions = computed(() => {
+      let filtered = departments.value;
+      // Если передан ID текущего отдела (в режиме редактирования), исключаем его из списка
+      if (props.initialData?.id) {
+        filtered = departments.value.filter(dept => dept.id !== props.initialData.id);
+      }
+      return filtered.map(dept => ({ value: dept.id, label: dept.name }));
     });
 
-    watch(departments, (newDepts) => {
-      departmentOptions.value = newDepts.map(dept => ({
-        value: dept.id,
-        label: dept.name
-      }));
-    });
+     const submitButtonText = computed(() => 
+      props.initialData?.id ? 'Сохранить изменения' : 'Создать отдел'
+    );
 
     onMounted(() => {
       loadOrganizations();
@@ -152,9 +152,7 @@ export default {
     };
 
     const clearFieldError = (field) => {
-      // Очищаем клиентскую ошибку
       if (errors.value[field]) errors.value[field] = null;
-      // Очищаем серверную ошибку
       if (props.serverErrors[field]) {
         const newErrors = { ...props.serverErrors };
         delete newErrors[field];
@@ -168,7 +166,6 @@ export default {
         errors.value = err;
         return;
       }
-      // Сбрасываем серверные ошибки перед отправкой
       emit('update:serverErrors', {});
       
       const payload = {
@@ -188,7 +185,8 @@ export default {
       loadingOrganizations,
       loadingDepartments,
       clearFieldError,
-      onSubmit
+      onSubmit,
+      submitButtonText
     };
   }
 };

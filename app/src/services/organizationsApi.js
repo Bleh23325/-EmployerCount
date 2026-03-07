@@ -11,7 +11,7 @@ const api = axios.create({
 
 // Перехватчик для добавления токена
 api.interceptors.request.use(config => {
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwiaWF0IjoxNzcyOTAyNjQ3LCJleHAiOjE3NzI5MDYyNDd9.PZ9k7dxrdeSW6h7G0VlrfyghX8nWfT0q7x0dRdrMqaw';
+    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwiaWF0IjoxNzcyOTA2NzYyLCJleHAiOjE3NzI5MTAzNjJ9.ZoW8lhYeVme_fXHW7381dZAzb-JCXQrQZepof1BR8Ak';
     
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;

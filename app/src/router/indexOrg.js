@@ -4,11 +4,11 @@ import CreateEmployeePage from '@/views/employees/CreateEmployeePage.vue'
 // Импортируем компоненты для организаций
 import OrganizationsPage from '@/views/organizations/OrganizationsPage.vue'
 import CreateOrganizationPage from '@/views/organizations/CreateOrganizationPage.vue'
-// Импортируем страницу редактирования организации 
 import EditOrganizationPage from '@/views/organizations/EditOrganizationPage.vue'
 // Импортируем компоненты для отделов
 import DepartmentsPage from '@/views/departments/DepartmentsPage.vue'
 import CreateDepartmentPage from '@/views/departments/CreateDepartmentPage.vue'
+import EditDepartmentsPage from '@/views/departments/EditDepartmentsPage.vue'
 
 
 const routes = [
@@ -59,6 +59,7 @@ const routes = [
   {
     path: '/departments/edit/:id',
     name: 'EditDepartment',
+    component: EditDepartmentsPage
   }
 ]
 
