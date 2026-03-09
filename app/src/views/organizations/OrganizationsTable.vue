@@ -12,7 +12,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="org in organizations" :key="org.id">
+        <tr v-for="org in filteredOrganizations" :key="org.id">
           <td>{{ org.name }}</td>
           <td>{{ org.comment || '—' }}</td>
           <td>{{ formatDate(org.add_at) }}</td>
@@ -21,13 +21,16 @@
             <Button @click="deleteOrganization(org.id)" class="deleteBtn">Удалить</Button>
           </td>
         </tr>
+        <tr v-if="filteredOrganizations.length === 0">
+          <td colspan="4" class="empty-message">Нет организаций, соответствующих фильтру</td>
+        </tr>
       </tbody>
     </table>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { Button } from '@/components/index';
 import { organizationsApi } from '@/services/organizationsApi';
 import { useRouter } from 'vue-router';
@@ -35,7 +38,13 @@ import { useRouter } from 'vue-router';
 export default {
   name: 'OrganizationsTable',
   components: { Button },
-  setup() {
+  props: {
+    filter: {
+      type: String,
+      default: ''
+    }
+  },
+  setup(props) {
     const router = useRouter();
     const organizations = ref([]);
     const loading = ref(true);
@@ -57,6 +66,15 @@ export default {
       }
     };
 
+    // Фильтрация по названию
+    const filteredOrganizations = computed(() => {
+      if (!props.filter) return organizations.value;
+      const query = props.filter.toLowerCase();
+      return organizations.value.filter(org =>
+        org.name.toLowerCase().includes(query)
+      );
+    });
+
     const editOrganization = (id) => {
       router.push(`/organizations/edit/${id}`);
     };
@@ -74,7 +92,7 @@ export default {
     onMounted(fetchOrganizations);
 
     return {
-      organizations,
+      filteredOrganizations,
       loading,
       error,
       formatDate,
@@ -86,6 +104,13 @@ export default {
 </script>
 
 <style scoped>
+
+.empty-message {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+}
+
 .organizations-table-container {
   padding: 20px;
   max-width: 1200px;
