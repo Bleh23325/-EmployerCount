@@ -3,7 +3,7 @@
         <h1>Учет сотрудников</h1>
     </Block>
     <Block>
-        <div>
+        <div class="baseGoriz">
             <nav>
                 <router-link to="/employees">Сотрудники</router-link>
             </nav>

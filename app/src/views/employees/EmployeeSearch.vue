@@ -34,7 +34,7 @@ export default {
         },
         placeholder: {
             type: String,
-            default: 'Поиск по ФИО'
+            default: 'Поиск по ФИО, должности, отделу'
         },
         showResults: {
             type: Boolean,

@@ -37,6 +37,9 @@
                     <th>Имя</th>
                     <th>Отчество</th>
                     <th>Дата рождения</th>
+                    <th>Должность</th>
+                    <th>Отдел</th> 
+                    <th>Зарплата</th> 
                     <th>Подробные данные</th>
                     <th>Действия</th>
                 </tr>
@@ -48,6 +51,9 @@
                     <td>{{ employee.name }}</td>
                     <td>{{ employee.patronymic }}</td>
                     <td>{{ formatDate(employee.date_of_birth) }}</td>
+                    <td>{{ getCurrentPosition(employee.id) }}</td>
+                    <td>{{ getCurrentDepartment(employee.id) }}</td>
+                    <td>{{ getCurrentSalary(employee.id) }}</td>
                     <td class="action-cell">
                         <Button @click="viewPassportData(employee.id_passport_data)">
                             Паспорт
@@ -164,6 +170,7 @@ export default {
         const showDeleteConfirmModal = ref(false);
         const deletingEmployeeId = ref(null);
         const deletingEmployeeName = ref('');
+        const filteredEmployees = ref([]);
 
         // Подтверждение удаления сотрудника
         const confirmDeleteEmployee = (id, firstName, name) => {
@@ -179,41 +186,138 @@ export default {
         deletingEmployeeName.value = '';
         };
 
+        // Справочники
+        const organizations = ref([]);
+        const departments = ref([]);
+        const positions = ref([]);
+        
+        // Кадровые операции
+        const personnelOperations = ref({});
+
+        const loadDictionaries = async () => {
+            try {
+                organizations.value = await employeesApi.getOrganizations();
+                departments.value = await employeesApi.getDepartments();
+                positions.value = await employeesApi.getPositions();
+                console.log('Загружены справочники:', {
+                    organizations: organizations.value,
+                    departments: departments.value,
+                    positions: positions.value
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки справочников:', error);
+            }
+        };
+
+        // Загрузка кадровых операций
+        const loadPersonnelOperations = async () => {
+            try {
+                const allOperations = await employeesApi.getPersonnelOperations();
+                console.log('Загружены кадровые операции:', allOperations);
+                
+                // Группируем по сотрудникам и берем последнюю операцию
+                const latestOps = {};
+                allOperations.forEach(op => {
+                    if (!latestOps[op.id_employee] || new Date(op.add_at) > new Date(latestOps[op.id_employee].add_at)) {
+                        latestOps[op.id_employee] = op;
+                    }
+                });
+                personnelOperations.value = latestOps;
+                console.log('Последние операции:', personnelOperations.value);
+            } catch (error) {
+                console.error('Ошибка загрузки кадровых операций:', error);
+            }
+        };
+
+        // Методы для получения названий
+        const getOrganizationName = (id) => {
+            if (!id) return '—';
+            const org = organizations.value.find(o => o.id === id);
+            return org ? org.name : '—';
+        };
+
+        const getDepartmentName = (id) => {
+            if (!id) return '—';
+            const dept = departments.value.find(d => d.id === id);
+            return dept ? dept.name : '—';
+        };
+
+        const getPositionName = (id) => {
+            if (!id) return '—';
+            const pos = positions.value.find(p => p.id === id);
+            return pos ? pos.name : '—';
+        };
+
+        // Методы для получения данных из кадровых операций
+        const getCurrentDepartment = (employeeId) => {
+            if (!employeeId || !personnelOperations.value) return '—';
+            const op = personnelOperations.value[employeeId];
+            if (!op || !op.id_department) return '—';
+            const dept = departments.value?.find(d => d.id === op.id_department);
+            return dept ? dept.name : '—';
+        };
+
+        const getCurrentPosition = (employeeId) => {
+            if (!employeeId || !personnelOperations.value) return '—';
+            const op = personnelOperations.value[employeeId];
+            if (!op || !op.id_position) return '—';
+            const pos = positions.value?.find(p => p.id === op.id_position);
+            return pos ? pos.name : '—';
+        };
+
+        const getCurrentSalary = (employeeId) => {
+            const op = personnelOperations.value[employeeId];
+            if (!op) return '—';
+            return op.setting_the_salary || op.salary_change || '—';
+        };
+
+
+
+        onMounted(async () => {
+            await loadEmployees();
+            await loadPersonnelOperations();
+            organizations.value = await employeesApi.getOrganizations();
+            departments.value = await employeesApi.getDepartments();
+            positions.value = await employeesApi.getPositions();
+        });
+        
+         onMounted(async () => {
+            await loadEmployees();
+            await loadDictionaries();
+            await loadPersonnelOperations();
+        });
+
         
         const searchQuery = ref('');
 
 
-        const filteredEmployees = computed(() => {
-            if (!searchQuery.value.trim()) {
-                return employees.value;
-            }
 
-            const query = searchQuery.value.toLowerCase().trim();
+        const handleSearch = (query) => {
+            searchQuery.value = query;
             
-            return employees.value.filter(employee => {
-                // Разбиваем запрос на отдельные слова
-                const queryWords = query.split(/\s+/).filter(word => word.length > 0);
+            if (!query.trim()) {
+                filteredEmployees.value = employees.value;
+                return;
+            }
+            
+            const lowerQuery = query.toLowerCase();
+            
+            filteredEmployees.value = employees.value.filter(emp => {
+                const departmentName = getCurrentDepartment(emp.id);
+                const positionName = getCurrentPosition(emp.id);
                 
-                // Собираем все данные сотрудника в одну строку для поиска
-                const employeeData = [
-                    employee.first_name || '',
-                    employee.name || '',
-                    employee.patronymic || ''
-                ].join(' ').toLowerCase();
-                
-                // Проверяем, что ВСЕ слова из запроса встречаются в данных сотрудника
-                return queryWords.every(word => employeeData.includes(word));
+                return (
+                    emp.first_name?.toLowerCase().includes(lowerQuery) ||
+                    emp.name?.toLowerCase().includes(lowerQuery) ||
+                    emp.patronymic?.toLowerCase().includes(lowerQuery) ||
+                    departmentName?.toLowerCase().includes(lowerQuery) ||
+                    positionName?.toLowerCase().includes(lowerQuery)
+                );
             });
-        });
-
-
-        // Обработчики поиска
-        const handleSearch = (value) => {
-            console.log('Поиск:', value);
         };
-
         const handleClearSearch = () => {
-            console.log('Поиск очищен');
+            searchQuery.value = '';
+            filteredEmployees.value = employees.value;
         };
 
         // Функция для склонения
@@ -341,6 +445,7 @@ export default {
             try {
                 loading.value = true;
                 employees.value = await employeesApi.getEmployees();
+                filteredEmployees.value = employees.value; // ← Инициализация
             } catch (err) {
                 error.value = 'Не удалось загрузить список сотрудников';
                 console.error(err);
@@ -496,8 +601,22 @@ export default {
             const employee = employees.value.find(e => e.id === employeeId);
             
             if (employee) {
-                selectedEmployeeData.value = employee;
-                showEmployeeEditModal.value = true;
+                employeesApi.getPersonnelOperations(employeeId).then(operations => {
+                    if (operations && operations.length > 0) {
+                        const latestOp = operations[operations.length - 1];
+                        employee.id_organization = latestOp.id_organization;
+                        employee.id_department = latestOp.id_department;
+                        employee.id_position = latestOp.id_position;
+                        employee.setting_the_salary = latestOp.setting_the_salary;
+                    }
+                    
+                    selectedEmployeeData.value = employee;
+                    showEmployeeEditModal.value = true;
+                }).catch(error => {
+                    console.error('Ошибка загрузки кадровых данных:', error);
+                    selectedEmployeeData.value = employee;
+                    showEmployeeEditModal.value = true;
+                });
             }
         };
 
@@ -522,38 +641,48 @@ export default {
         });
 
         return {
+            
+            notificationRef,
             employees,
             loading,
             error,
             searchQuery,
             filteredEmployees,
-            handleSearch,
-            handleClearSearch,
-            pluralize,
-            formatDate,
-            viewPassportData,
-            viewRegistrationAddress,
-            viewEmployeeFiles,
+            organizations,
+            departments,
+            positions,
             showPassportModal,
             showAddressModal,
             showFilesModal,
+            showEmployeeEditModal,
+            showDeleteConfirmModal,
             selectedPassportData,
             selectedAddressData,
             selectedEmployeeFiles,
             selectedEmployeeId,
-            confirmDeleteEmployee,  
-            cancelDeleteEmployee,
-            executeDeleteEmployee,
-            showDeleteConfirmModal,
+            selectedEmployeeData,
             deletingEmployeeName,
-            notificationRef,
-            handleUpdatePassport,
-            handleUpdateAddress,
+            formatDate,
+            pluralize,
+            handleClearSearch,
+            getOrganizationName,
+            getDepartmentName,
+            getPositionName,
+            getCurrentDepartment,
+            getCurrentPosition,
+            getCurrentSalary,
+            viewPassportData,
+            viewRegistrationAddress,
+            viewEmployeeFiles,
+            handleSearch,
             handleEditEmployee,
             handleUpdateEmployee,
-            showEmployeeEditModal,
-            selectedEmployeeData,
-            handleUploadFile
+            handleUpdatePassport,
+            handleUpdateAddress,
+            handleUploadFile,
+            confirmDeleteEmployee,
+            cancelDeleteEmployee,
+            executeDeleteEmployee
         };
     }
 }

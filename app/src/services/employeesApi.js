@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { TOKEN } from './token';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -9,16 +10,13 @@ const api = axios.create({
     },
 });
 
-// ✅ Перехватчик для добавления токена
-api.interceptors.request.use(config => {
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjAsImlhdCI6MTc3MzA1NTQwOCwiZXhwIjoxNzczMDU5MDA4fQ.mOaBEu5Siik7ZFONYadLCYaxBDev3YAeaYFwbf9QnB8';
-    
 
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+
+// Перехватчик для добавления токена
+api.interceptors.request.use(config => {
+    if (TOKEN) {
+        config.headers.Authorization = `Bearer ${TOKEN}`;
     }
-    
-    
     return config;
 });
 
@@ -59,13 +57,77 @@ export const employeesApi = {
     async getEmployeeFiles(employeeId) {
         try {
             const response = await api.get(`/files/employee/${employeeId}`);
-            console.log('Получены файлы сотрудника:', response.data);
             return response.data;
         } catch (error) {
             console.error('Ошибка при загрузке файлов:', error);
-            return []; // Возвращаем пустой массив в случае ошибки
+            return [];
         }
     },
+
+    async getOrganizations() {
+        try {
+            const response = await api.get('/organizations');
+            console.log('Загружены организации:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка при загрузке организаций:', error);
+            return [];
+        }
+    },
+
+    async getDepartments() {
+        try {
+            const response = await api.get('/departments');
+            console.log('Загружены отделы:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка при загрузке отделов:', error);
+            return [];
+        }
+    },
+
+    async getPositions() {
+        try {
+            const response = await api.get('/positions');
+            console.log('Загружены должности:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка при загрузке должностей:', error);
+            return [];
+        }
+    },
+
+    async getPersonnelOperations(employeeId) {
+        try {
+            const url = '/operations';
+            console.log('Запрос всех кадровых операций:', url);
+            
+            const response = await api.get(url);
+            
+            if (employeeId) {
+                const filteredOps = response.data.filter(op => op.id_employee === employeeId);
+                console.log(`Отфильтрованы операции для сотрудника ${employeeId}:`, filteredOps);
+                return filteredOps;
+            }
+            
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка при загрузке кадровых операций:', error);
+            return [];
+        }
+    },
+
+    async createPersonnelOperation(operationData) {
+        try {
+            console.log('Создание кадровой операции:', operationData);
+            const response = await api.post('/operations', operationData);
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка при создании кадровой операции:', error);
+            throw error;
+        }
+    },
+
 
     async createPassportData(passportData) {
         try {const cleanUnitCode = passportData.unit_code ? passportData.unit_code.replace(/-/g, '') : '';
@@ -130,52 +192,66 @@ export const employeesApi = {
         }
     },
 
-    async createFullEmployee(employeeData) {
-        try {
-            // паспортные данные
-            const passportResponse = await this.createPassportData(employeeData.passportData);
-            const passportDataId = passportResponse.passport.id; 
 
-            //  адрес регистрации
-            const addressResponse = await this.createRegistrationAddress(employeeData.addressData);
-            const addressDataId = addressResponse.address.id;
+async createFullEmployee(employeeData) {
+    try {
+        // 1. Создаем паспортные данные
+        const passportResponse = await this.createPassportData(employeeData.passportData);
+        const passportDataId = passportResponse.passport.id; 
+
+        // 2. Создаем адрес регистрации
+        const addressResponse = await this.createRegistrationAddress(employeeData.addressData);
+        const addressDataId = addressResponse.address.id;
+        
+        // 3. Создаем сотрудника (БЕЗ организации, отдела и должности)
+        const employeeResponse = await this.createEmployee(
+            employeeData, 
+            passportDataId, 
+            addressDataId
+        );
+        const employeeId = employeeResponse.employee.id; 
+
+        // 4. Создаем кадровую операцию
+        if (employeeData.id_department || employeeData.id_position || employeeData.setting_the_salary) {
+            console.log('Создание кадровой операции для сотрудника:', employeeId);
             
-            // сотрудник
-            const employeeResponse = await this.createEmployee(
-                employeeData, 
-                passportDataId, 
-                addressDataId
-            );
-            const employeeId = employeeResponse.employee.id; 
-
-
-            // файлы
-            if (employeeData.files && employeeData.files.length > 0) {
-                for (const file of employeeData.files) {
-                    const fullPath = file.fullPath || file.name;
-                    
-                    
-                    await this.createFile({
-                        id_employees: String(employeeId),
-                        name: file.name,
-                        file: fullPath
-                    });
-                }
-            }
-            
-
-            return {
-                success: true,
-                employeeId: employeeId,
-                passportDataId: passportDataId,
-                addressDataId: addressDataId,
-                message: 'Сотрудник успешно создан'
-            };
-
-        } catch (error) {
-            console.error('Ошибка при создании сотрудника:', error);
-            throw error;
+            await this.createPersonnelOperation({
+                id_employee: employeeId,
+                id_department: employeeData.id_department || null,
+                id_position: employeeData.id_position || null,
+                setting_the_salary: employeeData.setting_the_salary || null,
+                salary_change: null,
+                dismissal_from_work: null,
+                delete_at: null,
+                update_at: null,
+                add_at: new Date().toISOString()
+            });
         }
+
+        // 5. Сохраняем файлы
+        if (employeeData.files && employeeData.files.length > 0) {
+            for (const file of employeeData.files) {
+                const fullPath = file.fullPath || file.name;
+                await this.createFile({
+                    id_employees: String(employeeId),
+                    name: file.name,
+                    file: fullPath
+                });
+            }
+        }
+
+        return {
+            success: true,
+            employeeId: employeeId,
+            passportDataId: passportDataId,
+            addressDataId: addressDataId,
+            message: 'Сотрудник успешно создан'
+        };
+
+    } catch (error) {
+        console.error('Ошибка при создании сотрудника:', error);
+        throw error;
+    }
 },
 
 

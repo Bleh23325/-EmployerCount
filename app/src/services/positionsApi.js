@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { TOKEN } from './token';
 
 const API_BASE = 'http://localhost:5000/api';
 
@@ -7,11 +8,10 @@ const api = axios.create({
     headers: { 'Content-Type': 'application/json' },
 });
 
-// Интерцептор для добавления токена
+// Перехватчик для добавления токена
 api.interceptors.request.use(config => {
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwiaWF0IjoxNzcyOTExMTkzLCJleHAiOjE3NzI5MTQ3OTN9.Y-vrmrHVf0P8BFxNuJiu4oDLOXhwSOdcArH-9EEvwms';
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    if (TOKEN) {
+        config.headers.Authorization = `Bearer ${TOKEN}`;
     }
     return config;
 });

@@ -1,15 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import EmployeesPage from '@/views/employees/EmployeesPage.vue'
 import CreateEmployeePage from '@/views/employees/CreateEmployeePage.vue'
-// Импортируем компоненты для организаций
+//компоненты для организаций
 import OrganizationsPage from '@/views/organizations/OrganizationsPage.vue'
 import CreateOrganizationPage from '@/views/organizations/CreateOrganizationPage.vue'
 import EditOrganizationPage from '@/views/organizations/EditOrganizationPage.vue'
-// Импортируем компоненты для отделов
+//компоненты для отделов
 import DepartmentsPage from '@/views/departments/DepartmentsPage.vue'
 import CreateDepartmentPage from '@/views/departments/CreateDepartmentPage.vue'
 import EditDepartmentsPage from '@/views/departments/EditDepartmentsPage.vue'
-// Импортируем компоненты для должностей
+//компоненты для должностей
 import PositionsPage from '@/views/positions/PositionsPage.vue'
 import CreatePositionsPage from '@/views/positions/CreatePositionsPage.vue'
 import EditPositionsPage from '@/views/positions/EditPositionsPage.vue'
@@ -20,9 +20,9 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    redirect: '/employees' // можно оставить или изменить на '/organizations'
+    redirect: '/employees' 
   },
-  // Маршруты сотрудников
+
   {
     path: '/employees',
     name: 'employees',
@@ -33,7 +33,7 @@ const routes = [
     name: 'CreateEmployee',
     component: CreateEmployeePage
   },
-  // Маршруты организаций
+
   {
     path: '/organizations',
     name: 'organizations',
@@ -44,13 +44,13 @@ const routes = [
     name: 'CreateOrganization',
     component: CreateOrganizationPage
   },
-  // Маршрут для редактирования организаций
+
   {
     path: '/organizations/edit/:id',
     name: 'EditOrganization',
     component: EditOrganizationPage
   },
-  // Маршруты отделов
+
   {
     path: '/departments',
     name: 'departments',
