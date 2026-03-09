@@ -28,18 +28,6 @@
       <span v-if="serverErrors.id_department" class="error-text">{{ serverErrors.id_department }}</span>
     </div>
 
-    <div class="form-group" :class="{ 'has-error': serverErrors.comment }">
-      <label for="comment">Комментарий</label>
-      <Input
-        id="comment"
-        v-model="form.comment"
-        type="textarea"
-        rows="3"
-        :class="{ 'error': serverErrors.comment }"
-        @input="clearFieldError('comment')"
-      />
-      <span v-if="serverErrors.comment" class="error-text">{{ serverErrors.comment }}</span>
-    </div>
 
     <div class="form-actions">
       <Button type="submit" variant="primary">{{ submitButtonText }}</Button>
