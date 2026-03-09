@@ -14,8 +14,10 @@ const api = axios.create({
 
 // Перехватчик для добавления токена
 api.interceptors.request.use(config => {
+
     if (TOKEN) {
         config.headers.Authorization = `Bearer ${TOKEN}`;
+
     }
     return config;
 });

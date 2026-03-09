@@ -15,10 +15,15 @@
 </template>
 
 <script>
-import { useRouter } from 'vue-router';
+import { useRouter } from 'vue-router'; // для навигации
+// ref создаёт реактивные переменные, getCurrentInstance позволяет получить
+// доступ к глобальным свойствам Vue
 import { ref, getCurrentInstance } from 'vue';
+// импорт кнопки
 import { Button } from '@/components/index';
+// импорт формы отделов
 import DepartmentForm from './components/DepartmentForm.vue';
+// API для работы с отделами
 import { departmentsApi } from '@/services/departmentsApi';
 
 export default {
@@ -28,38 +33,53 @@ export default {
     DepartmentForm
   },
   setup() {
+    // создаём экземпляр роутера чтобы иметь возможность переходить по адресам
     const router = useRouter();
+    // реактивная переменная для хранения ошибок валидации с сервера
     const serverErrors = ref({});
+    // получаем доступ к текущему экземпляру Vue
     const instance = getCurrentInstance();
+    // получаем плагин уведомлений, а если его нет, то notify будет undefined
+    // и тогда будет использоваться alert
     const notify = instance?.appContext.config.globalProperties.$notify;
 
+    // функция возврата на страницу с просмотром списка отделов
     const goBack = () => {
+      // переходим по указанному адресу
       router.push('/departments');
     };
 
+    // функция для обновления объекта, вызывается, когда надо очистить ошибки
+    // какого-то поля после ввода
     const updateServerErrors = (errors) => {
-      serverErrors.value = errors;
+      serverErrors.value = errors; // обновляем реактивную переменную
     };
 
+    // функция которая вызывается когда создаётся новый отдел
     const handleSubmit = async (departmentData) => {
       try {
+        // отправляем запрос на сервер для создания отдела
         await departmentsApi.createDepartment(departmentData);
+        // если всё успешно, показываем уведомление
         if (notify) {
           notify.success('Успешно', 'Отдел успешно создан');
         } else {
           alert('Отдел успешно создан');
         }
+        // после успеха переходим обратно к списку отделов
         router.push('/departments');
       } catch (err) {
         console.error(err);
-        // Если сервер вернул ошибки валидации по полям
+        // проверяем, есть ли в ответе сервера поле errors
         if (err.response?.data?.errors) {
+          // если есть, сохраняем их в serverErrors чтобы передать обратно в форму
           serverErrors.value = err.response.data.errors;
+          // показ уведомления о том что нужно проверить поля
           if (notify) {
             notify.error('Ошибка', 'Проверьте правильность заполнения полей');
           }
         } else {
-          // Общая ошибка
+          // иначе это общая ошибка, формирование текста сообщения
           const message = err.response?.data?.message || err.message || 'Произошла ошибка';
           if (notify) {
             notify.error('Ошибка', message);
@@ -70,6 +90,7 @@ export default {
       }
     };
 
+    // возвращаем из setup всё, что нужно исполльзовать в шаблоне
     return {
       goBack,
       handleSubmit,
