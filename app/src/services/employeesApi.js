@@ -197,15 +197,15 @@ export const employeesApi = {
 
 async createFullEmployee(employeeData) {
     try {
-        // 1. Создаем паспортные данные
+        //паспортные данные
         const passportResponse = await this.createPassportData(employeeData.passportData);
         const passportDataId = passportResponse.passport.id; 
 
-        // 2. Создаем адрес регистрации
+        // адрес регистрации
         const addressResponse = await this.createRegistrationAddress(employeeData.addressData);
         const addressDataId = addressResponse.address.id;
         
-        // 3. Создаем сотрудника (БЕЗ организации, отдела и должности)
+        //сотрудник
         const employeeResponse = await this.createEmployee(
             employeeData, 
             passportDataId, 
@@ -213,7 +213,7 @@ async createFullEmployee(employeeData) {
         );
         const employeeId = employeeResponse.employee.id; 
 
-        // 4. Создаем кадровую операцию
+        //кадровая операция
         if (employeeData.id_department || employeeData.id_position || employeeData.setting_the_salary) {
             console.log('Создание кадровой операции для сотрудника:', employeeId);
             
@@ -230,7 +230,7 @@ async createFullEmployee(employeeData) {
             });
         }
 
-        // 5. Сохраняем файлы
+        //файл
         if (employeeData.files && employeeData.files.length > 0) {
             for (const file of employeeData.files) {
                 const fullPath = file.fullPath || file.name;

@@ -567,7 +567,6 @@ export default {
         };
         
         const handleUploadFile = async (files) => {
-            
             if (!selectedEmployeeId.value) {
                 console.error('ID сотрудника не указан');
                 return;
@@ -575,25 +574,65 @@ export default {
             
             try {
                 for (const file of files) {
+                    const savedFile = await saveFileToStorage(file);
+                    
                     const fileData = {
                         id_employees: String(selectedEmployeeId.value),
                         name: file.name,
-                        file: file.path || file.name
+                        file: savedFile.displayPath
                     };
                     
                     console.log('Сохраняем файл:', fileData);
-                    
                     await employeesApi.createFile(fileData);
                 }
                 
                 const updatedFiles = await employeesApi.getEmployeeFiles(selectedEmployeeId.value);
-                console.log('Обновленный список файлов:', updatedFiles);
                 selectedEmployeeFiles.value = updatedFiles;
+                
+                if (notificationRef.value) {
+                    notificationRef.value.success('Успех', 'Файлы успешно добавлены', 3000);
+                }
                 
             } catch (error) {
                 console.error('Ошибка при загрузке файлов:', error);
+                if (notificationRef.value) {
+                    notificationRef.value.error('Ошибка', 'Не удалось добавить файлы', 5000);
+                }
             }
-};
+        };
+
+        const saveFileToStorage = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const timestamp = Date.now();
+                        const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+                        const savedName = `${timestamp}-${safeName}`;
+                        
+                        const files = JSON.parse(localStorage.getItem('uploadedFiles') || '{}');
+                        files[savedName] = {
+                            name: file.name,
+                            data: e.target.result,
+                            type: file.type,
+                            size: file.size
+                        };
+                        localStorage.setItem('uploadedFiles', JSON.stringify(files));
+                        
+                        resolve({
+                            name: file.name,
+                            savedName: savedName,
+                            displayPath: `/uploads/${savedName}`,
+                            size: file.size
+                        });
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        };
         const showEmployeeEditModal = ref(false);
         const selectedEmployeeData = ref(null);
 
