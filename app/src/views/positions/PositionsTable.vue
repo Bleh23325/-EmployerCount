@@ -11,7 +11,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="pos in positions" :key="pos.id">
+        <tr v-for="pos in filteredPositions" :key="pos.id">
           <td>{{ pos.name }}</td>
           <td>{{ formatDate(pos.add_at) }}</td>
           <td>
@@ -19,13 +19,16 @@
             <Button @click="deletePosition(pos.id)" class="deleteBtn">Удалить</Button>
           </td>
         </tr>
+        <tr v-if="filteredPositions.length === 0">
+          <td colspan="3" class="empty-message">Нет должностей, соответствующих фильтру</td>
+        </tr>
       </tbody>
     </table>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { Button } from '@/components/index';
 import { positionsApi } from '@/services/positionsApi';
@@ -34,7 +37,13 @@ import { getCurrentInstance } from 'vue';
 export default {
   name: 'PositionsTable',
   components: { Button },
-  setup() {
+  props: {
+    filter: {
+      type: String,
+      default: ''
+    }
+  },
+  setup(props) {
     const router = useRouter();
     const positions = ref([]);
     const loading = ref(true);
@@ -65,6 +74,14 @@ export default {
       }
     };
 
+    const filteredPositions = computed(() => {
+      if (!props.filter) return positions.value;
+      const query = props.filter.toLowerCase();
+      return positions.value.filter(pos =>
+        pos.name.toLowerCase().includes(query)
+      );
+    });
+
     const editPosition = (id) => {
       router.push(`/positions/edit/${id}`);
     };
@@ -93,7 +110,7 @@ export default {
     onMounted(fetchPositions);
 
     return {
-      positions,
+      filteredPositions,
       loading,
       error,
       formatDate,
@@ -105,6 +122,13 @@ export default {
 </script>
 
 <style scoped>
+
+.empty-message {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+}
+
 .positions-table-container {
   padding: 20px;
   max-width: 1200px;
