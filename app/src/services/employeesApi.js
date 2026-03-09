@@ -11,11 +11,12 @@ const api = axios.create({
 
 // ✅ Перехватчик для добавления токена
 api.interceptors.request.use(config => {
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAsImlhdCI6MTc3Mjg5NDc0MiwiZXhwIjoxNzcyODk4MzQyfQ.X1ZvEbjS0ar8ex1FcxVjsaIGZwID7ZTkoW4i6UB6-x0';
+    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjAsImlhdCI6MTc3MzA1NTQwOCwiZXhwIjoxNzczMDU5MDA4fQ.mOaBEu5Siik7ZFONYadLCYaxBDev3YAeaYFwbf9QnB8';
     
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+    
     
     return config;
 });
@@ -23,7 +24,6 @@ api.interceptors.request.use(config => {
 
 
 export const employeesApi = {
-    // === СУЩЕСТВУЮЩИЕ МЕТОДЫ (ГЕТТЕРЫ) ===
     
     async getEmployees() {
         try {
@@ -58,16 +58,14 @@ export const employeesApi = {
     async getEmployeeFiles(employeeId) {
         try {
             const response = await api.get(`/files/employee/${employeeId}`);
+            console.log('Получены файлы сотрудника:', response.data);
             return response.data;
         } catch (error) {
             console.error('Ошибка при загрузке файлов:', error);
-            throw error;
+            return []; // Возвращаем пустой массив в случае ошибки
         }
     },
 
-    // === НОВЫЕ МЕТОДЫ ДЛЯ СОЗДАНИЯ (ПОСТЕРЫ) ===
-
-    // Создание паспортных данных
     async createPassportData(passportData) {
         try {const cleanUnitCode = passportData.unit_code ? passportData.unit_code.replace(/-/g, '') : '';
             const response = await api.post('/passport', {
@@ -84,7 +82,6 @@ export const employeesApi = {
         }
     },
 
-    // Создание адреса регистрации
     async createRegistrationAddress(addressData) {
         try {
             const response = await api.post('/registration-address', {
@@ -102,7 +99,6 @@ export const employeesApi = {
         }
     },
 
-    // Создание сотрудника (используя полученные ID)
     async createEmployee(employeeData, passportDataId, addressDataId) {
         try {
             const response = await api.post('/employees', {
@@ -123,52 +119,49 @@ export const employeesApi = {
         }
     },
 
-    // Создание файла для сотрудника
-    async createFile(employeeId, fileData) {
+    async createFile(fileData) {
         try {
-            const response = await api.post('/files', {
-                id_employees: employeeId,
-                name: fileData.name,
-                file: fileData.file
-            });
+            const response = await api.post('/files', fileData);
             return response.data;
         } catch (error) {
-            console.error('Ошибка при создании файла:', error);
+            console.error('Ошибка при создании записи файла:', error);
             throw error;
         }
     },
 
-    
     async createFullEmployee(employeeData) {
         try {
-            console.log('1. Создание паспортных данных...');
+            // паспортные данные
             const passportResponse = await this.createPassportData(employeeData.passportData);
             const passportDataId = passportResponse.passport.id; 
-            console.log(' Паспортные данные созданы, ID:', passportDataId);
 
-            console.log('2. Создание адреса регистрации...');
+            //  адрес регистрации
             const addressResponse = await this.createRegistrationAddress(employeeData.addressData);
-            const addressDataId = addressResponse.address.id; // Или addressResponse.id
-            console.log(' Адрес создан, ID:', addressDataId);
-
-            console.log('3. Создание сотрудника...');
+            const addressDataId = addressResponse.address.id;
+            
+            // сотрудник
             const employeeResponse = await this.createEmployee(
                 employeeData, 
                 passportDataId, 
                 addressDataId
             );
-            const employeeId = employeeResponse.employee.id; // Или employeeResponse.id
-            console.log('Сотрудник создан, ID:', employeeId);
+            const employeeId = employeeResponse.employee.id; 
 
-            // ШАГ 4: Загружаем файлы (если есть)
+
+            // файлы
             if (employeeData.files && employeeData.files.length > 0) {
-                console.log('4. Загрузка файлов...');
-                const filePromises = employeeData.files.map(file => 
-                    this.createFile(employeeId, file)
-                );
-                await Promise.all(filePromises);
-                console.log(` Загружено ${employeeData.files.length} файлов`);
+                for (const file of employeeData.files) {
+                    const fullPath = file.fullPath || file.name;
+                    
+                    
+                    await this.createFile({
+                        id_employees: String(employeeId),
+                        name: file.name,
+                        file: fullPath
+                    });
+                }
             }
+            
 
             return {
                 success: true,
@@ -179,27 +172,11 @@ export const employeesApi = {
             };
 
         } catch (error) {
-            console.error(' Ошибка при создании сотрудника:', error);
+            console.error('Ошибка при создании сотрудника:', error);
             throw error;
         }
-    },
+},
 
-
-    async updateEmployee(id, employeeData) {
-        try {
-            const response = await api.put(`/employees/${id}`, {
-                first_name: employeeData.first_name,
-                name: employeeData.name,
-                patronymic: employeeData.patronymic,
-                date_of_birth: employeeData.date_of_birth,
-                update_at: new Date().toISOString()
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Ошибка при обновлении сотрудника:', error);
-            throw error;
-        }
-    },
 
     async deleteEmployee(id) {
         try {
@@ -219,7 +196,90 @@ export const employeesApi = {
             console.error('Ошибка при загрузке сотрудника:', error);
             throw error;
         }
+    },
+    // Удаление файла
+    async deleteFile(id) {
+    try {
+        const response = await api.delete(`/files/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Ошибка при удалении файла:', error);
+        throw error;
     }
+    },
+
+    // Удаление паспортных данных
+    async deletePassportData(id) {
+    try {
+        const response = await api.delete(`/passport/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Ошибка при удалении паспортных данных:', error);
+        throw error;
+    }
+    },
+
+    // Удаление адреса регистрации
+    async deleteRegistrationAddress(id) {
+    try {
+        const response = await api.delete(`/registration-address/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Ошибка при удалении адреса регистрации:', error);
+        throw error;
+    }
+    },
+
+
+    async updatePassportData(id, data) {
+        try {
+            const response = await api.put(`/passport/${id}`, {
+                series: data.series,
+                number: data.number,
+                date_of_issue: data.date_of_issue,
+                unit_code: data.unit_code ? data.unit_code.replace(/-/g, '') : data.unit_code,
+                issued_by_whom: data.issued_by_whom
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка при обновлении паспортных данных:', error);
+            throw error;
+        }
+    },
+
+    async updateRegistrationAddress(id, data) {
+        try {
+            console.log('Обновление адреса:', id, data);
+            const response = await api.put(`/registration-address/${id}`, {
+                region: data.region,
+                locality: data.locality,
+                street: data.street,
+                house: data.house,
+                building: data.building || null,
+                apartament: data.apartament || null
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка при обновлении адреса:', error);
+            throw error;
+        }
+    },
+    async updateEmployee(id, data) {
+        try {
+            const response = await api.put(`/employees/${id}`, {
+                first_name: data.first_name,
+                name: data.name,
+                patronymic: data.patronymic || null,
+                date_of_birth: data.date_of_birth,
+                update_at: new Date().toISOString()
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка при обновлении сотрудника:', error);
+            throw error;
+        }
+    }
+
 };
 
 export default api;

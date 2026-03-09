@@ -2,7 +2,7 @@
     export default{
         name: 'UiInput',
         props:{
-            modelValue: {  // Добавь modelValue для v-model
+            modelValue: {
             type: [String, Number],
             default: ''
             },
@@ -14,7 +14,7 @@
             type: Boolean,
             default: false
             },
-            type: {  // Добавь поддержку type (для date, text и т.д.)
+            type: {
             type: String,
             default: 'text'
             },
@@ -48,7 +48,7 @@
 <style scoped>
 input {
     outline: none;
-    width: 60vh;
+    width: 40vh;
     font-size: 1.2em;
     border-radius: 3px;
     border:2px solid #777777;

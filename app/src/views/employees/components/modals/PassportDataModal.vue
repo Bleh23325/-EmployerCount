@@ -1,7 +1,7 @@
 <template>
     <Modal :show="modelValue" :title="'Паспортные данные'" @close="close">
         <div class="modal-header-actions">
-            <Button @click="editMode = !editMode" size="small">
+            <Button @click="editMode = !editMode" size="small" variant="secondary">
                 {{ editMode ? 'Отмена' : 'Изменить' }}
             </Button>
         </div>

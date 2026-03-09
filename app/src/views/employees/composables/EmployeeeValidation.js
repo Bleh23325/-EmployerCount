@@ -96,7 +96,7 @@ export function EmployeeValidation() {
       }
     }
 
-    // Добавляем ошибки в общий объект
+    // ошибки в общий объект
     errors.value = { ...errors.value, ...newErrors };
     return isValid;
   };

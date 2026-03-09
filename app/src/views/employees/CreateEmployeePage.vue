@@ -29,7 +29,6 @@ export default {
 
     const handleSubmit = (employeeData) => {
       console.log('Employee created:', employeeData);
-      // Здесь можно добавить дополнительную логику после создания
     };
 
     return {
