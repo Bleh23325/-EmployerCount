@@ -14,7 +14,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="dept in departments" :key="dept.id">
+        <tr v-for="dept in filteredDepartments" :key="dept.id">
           <td>{{ dept.name }}</td>
           <td>{{ dept.organizationName }}</td>
           <td>{{ dept.parentName }}</td>
@@ -25,13 +25,16 @@
             <Button @click="deleteDepartment(dept.id)" class="deleteBtn">Удалить</Button>
           </td>
         </tr>
+        <tr v-if="filteredDepartments.length === 0">
+          <td colspan="6" class="empty-message">Нет отделов, соответствующих фильтру</td>
+        </tr>
       </tbody>
     </table>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { Button } from '@/components/index';
 import { departmentsApi } from '@/services/departmentsApi';
@@ -41,7 +44,13 @@ import { getCurrentInstance } from 'vue';
 export default {
   name: 'DepartmentsTable',
   components: { Button },
-  setup() {
+  props: {
+    filter: {
+      type: String,
+      default: ''
+    }
+  },
+  setup(props) {
     const router = useRouter();
     const departments = ref([]);
     const loading = ref(true);
@@ -57,28 +66,23 @@ export default {
     const fetchDepartments = async () => {
       try {
         loading.value = true;
-        
-        // Загружаем отделы и организации одновременно
         const [deptsData, orgsData] = await Promise.all([
           departmentsApi.getDepartments(),
           organizationsApi.getOrganizations()
         ]);
 
-        // Создаём объекты для быстрого поиска названий по ID
         const orgMap = {};
         orgsData.forEach(org => { orgMap[org.id] = org.name; });
 
         const deptMap = {};
         deptsData.forEach(dept => { deptMap[dept.id] = dept.name; });
 
-        // Обогащаем данные отделов названиями
         const enriched = deptsData.map(dept => ({
           ...dept,
           organizationName: orgMap[dept.id_organization] || '—',
           parentName: dept.parent ? (deptMap[dept.parent] || '—') : '—'
         }));
 
-        // Сортируем по id для стабильности (опционально)
         departments.value = enriched.sort((a, b) => a.id - b.id);
       } catch (err) {
         console.error(err);
@@ -92,6 +96,14 @@ export default {
         loading.value = false;
       }
     };
+
+    const filteredDepartments = computed(() => {
+      if (!props.filter) return departments.value;
+      const query = props.filter.toLowerCase();
+      return departments.value.filter(dept =>
+        dept.name.toLowerCase().includes(query)
+      );
+    });
 
     const editDepartment = (id) => {
       router.push(`/departments/edit/${id}`);
@@ -121,7 +133,7 @@ export default {
     onMounted(fetchDepartments);
 
     return {
-      departments,
+      filteredDepartments,
       loading,
       error,
       formatDate,
@@ -133,6 +145,13 @@ export default {
 </script>
 
 <style scoped>
+
+.empty-message {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+}
+
 .departments-table-container {
   padding: 20px;
   max-width: 1200px;
