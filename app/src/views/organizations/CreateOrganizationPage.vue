@@ -15,10 +15,15 @@
 </template>
 
 <script>
-import { useRouter } from 'vue-router';
+import { useRouter } from 'vue-router'; // для навигации
+// ref создаёт реактивные переменные, getCurrentInstance позволяет получить
+// доступ к глобальным свойствам Vue
 import { ref, getCurrentInstance } from 'vue';
+// импорт кнопки
 import { Button } from '@/components/index';
+// импорт формы организаций
 import OrganizationForm from './components/OrganizationForm.vue';
+// API для работы с организациями
 import { organizationsApi } from '@/services/organizationsApi';
 
 export default {
@@ -28,45 +33,60 @@ export default {
     OrganizationForm
   },
   setup() {
+    // создаём экземпляр роутера чтобы иметь возможность переходить по адресам
     const router = useRouter();
+    // реактивная переменная для хранения ошибок валидации с сервера
     const serverErrors = ref({});
-    
-    // Получаем доступ к глобальному объекту уведомлений
+    // получаем доступ к текущему экземпляру Vue
     const instance = getCurrentInstance();
+    // получаем плагин уведомлений, а если его нет, то notify будет undefined
+    // и тогда будет использоваться alert
     const notify = instance?.appContext.config.globalProperties.$notify;
 
+    // функция возврата на страницу с просмотром списка организаций
     const goBack = () => {
+      // переходим по указанному адресу
       router.push('/organizations');
     };
 
+    // функция для обновления объекта, вызывается, когда надо очистить ошибки
+    // какого-то поля после ввода
     const updateServerErrors = (errors) => {
-      serverErrors.value = errors;
+      serverErrors.value = errors; // обновляем реактивную переменную
     };
 
+     // функция которая вызывается когда создаётся новая организация
    const handleSubmit = async (organizationData) => {
   try {
-    // Добавляем служебные поля, которые ожидает сервер
+    // для правильной работы отправки дат
     const payload = {
       ...organizationData,
       add_at: new Date().toISOString(), // текущая дата
       update_at: null,
       delete_at: null
     };
+    // отправляем запрос на сервер для создания организации
     await organizationsApi.createOrganization(payload);
+    // если всё успешно, показываем уведомление
     if (notify) {
       notify.success('Успешно', 'Организация успешно создана');
     } else {
       alert('Организация успешно создана');
     }
+    // после успеха переходим обратно к списку организаций
     router.push('/organizations');
   } catch (err) {
     console.error(err);
+    // проверяем, есть ли в ответе сервера поле errors
     if (err.response?.data?.errors) {
+      // если есть, сохраняем их в serverErrors чтобы передать обратно в форму
       serverErrors.value = err.response.data.errors;
+      // показ уведомления о том что нужно проверить поля
       if (notify) {
         notify.error('Ошибка', 'Проверьте правильность заполнения полей');
       }
     } else {
+      // иначе это общая ошибка, формирование текста сообщения
       const message = err.response?.data?.message || err.message || 'Произошла ошибка';
       if (notify) {
         notify.error('Ошибка', message);
@@ -77,6 +97,7 @@ export default {
   }
 };
 
+// возвращает всё
     return {
       goBack,
       handleSubmit,

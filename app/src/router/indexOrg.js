@@ -20,7 +20,7 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    redirect: '/employees' // можно оставить или изменить на '/organizations'
+    redirect: '/employees' 
   },
   // Маршруты сотрудников
   {

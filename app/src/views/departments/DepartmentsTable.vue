@@ -34,93 +34,138 @@
 </template>
 
 <script>
+// ref - реактивная переменная, onMuted - хук, computed - вычисляемое поле
 import { ref, onMounted, computed } from 'vue';
+// для навигации
 import { useRouter } from 'vue-router';
+// импорт кнопки
 import { Button } from '@/components/index';
+// API для работы с организациями и отделами
 import { departmentsApi } from '@/services/departmentsApi';
 import { organizationsApi } from '@/services/organizationsApi';
+// доступ к текущему экземпляру
 import { getCurrentInstance } from 'vue';
 
 export default {
   name: 'DepartmentsTable',
   components: { Button },
+  // props это свойства, которые можно передать в этот компонент из родительской
+  // страницы
   props: {
+    // filter это строка для поиска по названию
     filter: {
-      type: String,
-      default: ''
+      type: String, // тип - строка
+      default: '' // значение по умолчанию, т.е. пустая строка
     }
   },
+  // props - объек со значениями переданных свойств 
   setup(props) {
+    // экземпляр роутера для переходов
     const router = useRouter();
+    // хранит список всех отделов, полученный с сервера
     const departments = ref([]);
+    // флаг загрузки, true-идёт загрузка, false-окончена
     const loading = ref(true);
+    // текст ошибки
     const error = ref(null);
+    // получаем доступ к глобальному экземпляру для уведомлений
     const instance = getCurrentInstance();
     const notify = instance?.appContext.config.globalProperties.$notify;
 
+    // преобразует строку с датой в локальный формат (дд.мм.гггг)
     const formatDate = (dateString) => {
-      if (!dateString) return '—';
+      if (!dateString) return '—'; // если даты нет, возвращаем прочерк
+      // создаём объект Date и форматируем на русский формат
       return new Date(dateString).toLocaleDateString('ru-RU');
     };
 
+    // асинхронная функция для получения списка отделов и организаций
     const fetchDepartments = async () => {
       try {
+        // включается загрузка
         loading.value = true;
+        // загружаем параллельно и отделы и организации
         const [deptsData, orgsData] = await Promise.all([
+          // запрос на получение отделов
           departmentsApi.getDepartments(),
+          // запрос на получение организаций
           organizationsApi.getOrganizations()
         ]);
 
+        // объект, где ключ это айди организации а значение это её название
         const orgMap = {};
         orgsData.forEach(org => { orgMap[org.id] = org.name; });
 
+        // объект, где ключ это айди отдела а значение это его название
         const deptMap = {};
         deptsData.forEach(dept => { deptMap[dept.id] = dept.name; });
 
+        // проходим по каждому отделу из deptsData и добавляем два новых поля:
+        // organizationName это название организации к которой относится отдел
+        // parentName это название родительского отдела (если у него он есть)
         const enriched = deptsData.map(dept => ({
+          // копируем все исходные поля
           ...dept,
+          // если orgMap содержит название для id_organization, берём его, иначе прочерк
           organizationName: orgMap[dept.id_organization] || '—',
+          // если у отдела есть родитель, ищем его название в deptMap, иначе прочерк
           parentName: dept.parent ? (deptMap[dept.parent] || '—') : '—'
         }));
 
+        // сортируем отделы по айди
         departments.value = enriched.sort((a, b) => a.id - b.id);
       } catch (err) {
+        // выводим ошибку в консоль
         console.error(err);
+        // записываем текст ошибки в error
         error.value = err.message || 'Не удалось загрузить список отделов';
+        // для уведомления
         if (notify) {
           notify.error('Ошибка', 'Не удалось загрузить отделы');
         } else {
           alert('Ошибка загрузки');
         }
       } finally {
-        loading.value = false;
+        loading.value = false; // загрузка окончена
       }
     };
 
+    // computed - вычисляемое поле, которое автоматически пересчитывается при
+    // изменении filter или departments
     const filteredDepartments = computed(() => {
+      // если строка поиска пустая, возвращаем просто список
       if (!props.filter) return departments.value;
+      // поиск по нижнему регистру
       const query = props.filter.toLowerCase();
+      // возвращение тех отделов, название которых содержит query
       return departments.value.filter(dept =>
         dept.name.toLowerCase().includes(query)
       );
     });
 
+    // переход на страницу редактирования
     const editDepartment = (id) => {
       router.push(`/departments/edit/${id}`);
     };
 
+    // удаление отдела
     const deleteDepartment = async (id) => {
+      // спрашиваем подтверждение у пользователя
       if (!confirm('Вы уверены, что хотите удалить отдел?')) return;
       try {
+        // отправляем запрос на удаление отдела с данным айди
         await departmentsApi.deleteDepartment(id);
+        // если удаление успешно, показ уведомления
         if (notify) {
           notify.success('Успешно', 'Отдел удалён');
         } else {
           alert('Отдел удалён');
         }
+        // после удаления обновляем список отделов
         await fetchDepartments();
       } catch (err) {
         console.error(err);
+        // формирование текста ошибки
         const message = err.response?.data?.message || err.message || 'Ошибка при удалении';
         if (notify) {
           notify.error('Ошибка', message);
@@ -130,15 +175,17 @@ export default {
       }
     };
 
+    // загрузка данных
     onMounted(fetchDepartments);
 
+    // возвращаем данные и функции
     return {
-      filteredDepartments,
-      loading,
-      error,
-      formatDate,
-      editDepartment,
-      deleteDepartment
+      filteredDepartments, // список после поиска
+      loading, // флаг загрузки
+      error, // ошибка
+      formatDate, // форматирование даты
+      editDepartment, // переход на редактирование
+      deleteDepartment // удаление
     };
   }
 };

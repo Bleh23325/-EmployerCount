@@ -30,74 +30,118 @@
 </template>
 
 <script>
+// ref - реактивная переменная, onMuted - хук, computed - вычисляемое поле
 import { ref, onMounted, computed } from 'vue';
+// импорт кнопки
 import { Button } from '@/components/index';
+// API для работы с организациями
 import { organizationsApi } from '@/services/organizationsApi';
+// для навигации
 import { useRouter } from 'vue-router';
+// доступ к текущему экземпляру
+import { getCurrentInstance } from 'vue';
 
 export default {
   name: 'OrganizationsTable',
   components: { Button },
+  // props это свойства, которые можно передать в этот компонент из родительской
+  // страницы
   props: {
+    // filter это строка для поиска по названию
     filter: {
-      type: String,
-      default: ''
+      type: String, // тип - строка
+      default: '' // значение по умолчанию, т.е. пустая строка
     }
   },
+  // props - объек со значениями переданных свойств 
   setup(props) {
+    // экземпляр роутера для переходов
     const router = useRouter();
+    // хранит список всех организаций, полученный с сервера
     const organizations = ref([]);
+    // флаг загрузки, true-идёт загрузка, false-окончена
     const loading = ref(true);
+    // текст ошибки
     const error = ref(null);
+     // получаем доступ к глобальному экземпляру для уведомлений
+    const instance = getCurrentInstance();
+    const notify = instance?.appContext.config.globalProperties.$notify;
 
+
+    // преобразует строку с датой в локальный формат (дд.мм.гггг)
     const formatDate = (dateString) => {
-      if (!dateString) return '—';
+      if (!dateString) return '—'; // если даты нет, возвращаем прочерк
+      // создаём объект Date и форматируем на русский формат
       return new Date(dateString).toLocaleDateString('ru-RU');
     };
 
+    // загрузка данных с сервера
     const fetchOrganizations = async () => {
       try {
+        // включается загрузка
         loading.value = true;
+        // ожидание ответа от API
         organizations.value = await organizationsApi.getOrganizations();
       } catch (err) {
+        // логируем ошибку в консоль
+        console.error(err);
+        // записываем текст ошибки в error
         error.value = err.message || 'Не удалось загрузить список организаций';
+        // уведомление об ошибке
+        if (notify) {
+          notify.error('Ошибка', 'Не удалось загрузить организации');
+        } else {
+          alert('Ошибка загрузки');
+        }
       } finally {
-        loading.value = false;
+        loading.value = false; // окончание загрузки
       }
     };
 
-    // Фильтрация по названию
+    // поиск по названию, computed - вычисляемое значение, пересчитывается 
+    // автоматически при изменении filter или organizations
     const filteredOrganizations = computed(() => {
+      // если пусто, возвращаем просто список без изменений
       if (!props.filter) return organizations.value;
+      // переводим поисковый запрос к нижнему регистру
       const query = props.filter.toLowerCase();
+      // возвращаем организацию, где название содержит query
       return organizations.value.filter(org =>
         org.name.toLowerCase().includes(query)
       );
     });
 
+    // переход на страницу редактирования организации
     const editOrganization = (id) => {
+      // переход по адресу + айдишник
       router.push(`/organizations/edit/${id}`);
     };
 
+    // удаление организации по её айди
     const deleteOrganization = async (id) => {
+      // спрашиваем у пользователя подтверждение
       if (!confirm('Вы уверены, что хотите удалить организацию?')) return;
       try {
+        // отправляем запрос на удаление
         await organizationsApi.deleteOrganization(id);
+        // после удаления обновляем список
         await fetchOrganizations();
       } catch (err) {
         alert('Ошибка при удалении: ' + err.message);
       }
     };
 
+    // загружаем список после выполнения кода
     onMounted(fetchOrganizations);
 
+    // возвращение данных и функций
     return {
-      filteredOrganizations,
-      loading,
-      error,
-      formatDate,
-      editOrganization,
-      deleteOrganization
+      filteredOrganizations, // список после поиска
+      loading, // флаг загрузки
+      error, // текст ошибки
+      formatDate, // форматирование даты
+      editOrganization, // переход на редактирование
+      deleteOrganization // удаление
     };
   }
 };

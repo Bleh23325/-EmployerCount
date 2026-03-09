@@ -2,33 +2,40 @@ import axios from 'axios';
 
 const API_BASE = 'http://localhost:5000/api';
 
+// создание экземпляра с предустановленным базовым адресом и заголовком JSON
 const api = axios.create({
     baseURL: API_BASE,
     headers: { 'Content-Type': 'application/json' },
 });
 
-// Интерцептор для добавления токена
+// перехватчик запросов, он срабатывает перед каждым запросом
 api.interceptors.request.use(config => {
     const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OCwiaWF0IjoxNzczMDY0MTkwLCJleHAiOjE3NzMwNjc3OTB9.XsFdZoitSxCkiLCSZlZdaoC2ymGRSH5ci7XQhQB4hBg';
+    // добавление токена в заголовок авторизации
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
 });
 
+// экспорт объекта с методами для работы с должностями
 export const positionsApi = {
     async getPositions() {
         try {
+            // отправление запроса на получение на адрес с должностями
             const response = await api.get('/positions');
-            return response.data;
+            return response.data; // помещение ответа в поле дата, а затем его возвращение
         } catch (error) {
+            // при возникновении ошибки пишем её в консоль и пробрасываем дальше
             console.error('Ошибка при загрузке должностей:', error);
             throw error;
         }
     },
 
+    // получаем должность по её айди
     async getPosition(id) {
         try {
+            // вставляем айди в URL
             const response = await api.get(`/positions/${id}`);
             return response.data;
         } catch (error) {
@@ -37,8 +44,10 @@ export const positionsApi = {
         }
     },
 
+    // создаём новую должность, дата это объект с данными должности
     async createPosition(data) {
         try {
+            // запрос на отправку дата на сервер
             const response = await api.post('/positions', data);
             return response.data;
         } catch (error) {
@@ -47,8 +56,10 @@ export const positionsApi = {
         }
     },
 
+    // обновляем данные должности
     async updatePosition(id, data) {
         try {
+            // запрос на обновление по указанному айди и передача новых дата
             const response = await api.put(`/positions/${id}`, data);
             return response.data;
         } catch (error) {
@@ -57,8 +68,10 @@ export const positionsApi = {
         }
     },
 
+    // удаление должности по её айди
     async deletePosition(id) {
         try {
+            // запрос на удаление
             const response = await api.delete(`/positions/${id}`);
             return response.data;
         } catch (error) {
@@ -68,4 +81,5 @@ export const positionsApi = {
     }
 };
 
+// экспорт экземпляра axios, т.к. он может пригодиться для других запросов
 export default api;
