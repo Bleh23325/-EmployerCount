@@ -43,35 +43,39 @@ export default {
       serverErrors.value = errors;
     };
 
-    const handleSubmit = async (organizationData) => {
-      try {
-        await organizationsApi.createOrganization(organizationData);
-        if (notify) {
-          notify.success('Успешно', 'Организация успешно создана');
-        } else {
-          alert('Организация успешно создана'); // fallback
-        }
-        router.push('/organizations');
-      } catch (err) {
-        console.error(err);
-        // Проверяем, есть ли ошибки валидации от сервера
-        if (err.response?.data?.errors) {
-          serverErrors.value = err.response.data.errors;
-          // Можно также показать уведомление, что есть ошибки в форме
-          if (notify) {
-            notify.error('Ошибка', 'Проверьте правильность заполнения полей');
-          }
-        } else {
-          // Общая ошибка
-          const message = err.response?.data?.message || err.message || 'Произошла ошибка';
-          if (notify) {
-            notify.error('Ошибка', message);
-          } else {
-            alert('Ошибка: ' + message);
-          }
-        }
-      }
+   const handleSubmit = async (organizationData) => {
+  try {
+    // Добавляем служебные поля, которые ожидает сервер
+    const payload = {
+      ...organizationData,
+      add_at: new Date().toISOString(), // текущая дата
+      update_at: null,
+      delete_at: null
     };
+    await organizationsApi.createOrganization(payload);
+    if (notify) {
+      notify.success('Успешно', 'Организация успешно создана');
+    } else {
+      alert('Организация успешно создана');
+    }
+    router.push('/organizations');
+  } catch (err) {
+    console.error(err);
+    if (err.response?.data?.errors) {
+      serverErrors.value = err.response.data.errors;
+      if (notify) {
+        notify.error('Ошибка', 'Проверьте правильность заполнения полей');
+      }
+    } else {
+      const message = err.response?.data?.message || err.message || 'Произошла ошибка';
+      if (notify) {
+        notify.error('Ошибка', message);
+      } else {
+        alert('Ошибка: ' + message);
+      }
+    }
+  }
+};
 
     return {
       goBack,
