@@ -110,7 +110,6 @@ export default {
       }
       emit('update:serverErrors', {});
       
-      // Включаем id_department в отправку
       const payload = {
         name: form.value.name,
         id_department: form.value.id_department,
