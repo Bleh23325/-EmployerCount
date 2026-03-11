@@ -96,6 +96,33 @@ export function EmployeeValidation() {
       }
     }
 
+    // Проверка организации
+    if (!employeeData.id_organization || employeeData.id_organization === '') {
+      newErrors.id_organization = 'Выберите организацию';
+      isValid = false;
+    }
+
+    // Проверка отдела
+    if (!employeeData.id_department || employeeData.id_department === '') {
+      newErrors.id_department = 'Выберите отдел';
+      isValid = false;
+    }
+
+    // Проверка должности
+    if (!employeeData.id_position || employeeData.id_position === '') {
+      newErrors.id_position = 'Выберите должность';
+      isValid = false;
+    }
+
+    // Проверка оклада
+    if (employeeData.setting_the_salary && employeeData.setting_the_salary !== '') {
+      const salary = Number(employeeData.setting_the_salary);
+      if (isNaN(salary) || salary < 0) {
+        newErrors.setting_the_salary = 'Оклад не может быть отрицательным числом';
+        isValid = false;
+      }
+    }
+
     // ошибки в общий объект
     errors.value = { ...errors.value, ...newErrors };
     return isValid;
@@ -107,7 +134,7 @@ export function EmployeeValidation() {
     let isValid = true;
 
     // Серия паспорта
-    if (!passportData.series) {
+    if (!passportData.series || passportData.series.trim() === '') {
       newErrors.series = 'Серия паспорта обязательна';
       isValid = false;
     } else if (!/^\d{4}$/.test(passportData.series)) {
@@ -116,7 +143,7 @@ export function EmployeeValidation() {
     }
 
     // Номер паспорта
-    if (!passportData.number) {
+    if (!passportData.number || passportData.number.trim() === '') {
       newErrors.number = 'Номер паспорта обязателен';
       isValid = false;
     } else if (!/^\d{6}$/.test(passportData.number)) {
@@ -144,7 +171,7 @@ export function EmployeeValidation() {
     }
 
     // Код подразделения
-    if (!passportData.unit_code) {
+    if (!passportData.unit_code || passportData.unit_code.trim() === '') {
       newErrors.unit_code = 'Код подразделения обязателен';
       isValid = false;
     } else if (!/^\d{3}-\d{3}$/.test(passportData.unit_code)) {
@@ -153,7 +180,7 @@ export function EmployeeValidation() {
     }
 
     // Кем выдан
-    if (!passportData.issued_by_whom) {
+    if (!passportData.issued_by_whom || passportData.issued_by_whom.trim() === '') {
       newErrors.issued_by_whom = 'Поле "Кем выдан" обязательно';
       isValid = false;
     } else if (passportData.issued_by_whom.length < 10) {
@@ -174,7 +201,7 @@ export function EmployeeValidation() {
     let isValid = true;
 
     // Регион
-    if (!addressData.region) {
+    if (!addressData.region || addressData.region.trim() === '') {
       newErrors.region = 'Регион обязателен';
       isValid = false;
     } else if (addressData.region.length < 3) {
@@ -183,7 +210,7 @@ export function EmployeeValidation() {
     }
 
     // Населенный пункт
-    if (!addressData.locality) {
+    if (!addressData.locality || addressData.locality.trim() === '') {
       newErrors.locality = 'Населенный пункт обязателен';
       isValid = false;
     } else if (addressData.locality.length < 2) {
@@ -192,7 +219,7 @@ export function EmployeeValidation() {
     }
 
     // Улица
-    if (!addressData.street) {
+    if (!addressData.street || addressData.street.trim() === '') {
       newErrors.street = 'Улица обязательна';
       isValid = false;
     } else if (addressData.street.length < 3) {
@@ -201,7 +228,7 @@ export function EmployeeValidation() {
     }
 
     // Дом
-    if (!addressData.house) {
+    if (!addressData.house || addressData.house.trim() === '') {
       newErrors.house = 'Номер дома обязателен';
       isValid = false;
     } else if (!/^\d+[а-яА-Я]?$/.test(addressData.house)) {
@@ -243,6 +270,31 @@ export function EmployeeValidation() {
     errors.value = {};
   };
 
+  // Функция для получения всех сообщений об ошибках
+  const getErrorMessages = () => {
+    return Object.values(errors.value);
+  };
+
+  // Функция для получения первых 3 сообщений об ошибках (для краткого уведомления)
+  const getFirstErrorMessages = (count = 3) => {
+    const messages = Object.values(errors.value);
+    return messages.slice(0, count);
+  };
+
+  // Функция для форматирования сообщений об ошибках в строку
+  const formatErrorMessages = (maxMessages = 3) => {
+    const messages = Object.values(errors.value);
+    
+    if (messages.length === 0) return '';
+    
+    if (messages.length <= maxMessages) {
+      return messages.join('; ');
+    } else {
+      const firstMessages = messages.slice(0, maxMessages).join('; ');
+      return `${firstMessages} и еще ${messages.length - maxMessages} ошибок`;
+    }
+  };
+
   return {
     errors,
     validateAll,
@@ -250,6 +302,9 @@ export function EmployeeValidation() {
     validatePassportData,
     validateAddress,
     validateFile,
-    clearErrors
+    clearErrors,
+    getErrorMessages,
+    getFirstErrorMessages,
+    formatErrorMessages
   };
 }
