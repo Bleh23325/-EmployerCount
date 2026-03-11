@@ -84,7 +84,15 @@ export default {
       }
       // сбрасываем серверные ошибки перед отправкой
       emit('update:serverErrors', {});
-      emit('submit', { ...form.value });
+      const payload = {
+        name: form.value.name,
+        id_organization: form.value.id_organization,
+        comment: form.value.comment || null,
+        delete_at: null,
+        update_at: null,
+        add_at: new Date().toISOString()
+      };
+      emit('submit', payload);
     };
 
     return {
