@@ -1,0 +1,73 @@
+@import './base.css';
+
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-weight: normal;
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+  padding: 3px;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    display: flex;
+    place-items: center;
+  }
+
+  #app {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0 2rem;
+  }
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    122deg,
+    rgba(155, 89, 182, 0.61) 0%,
+    rgba(230, 126, 34, 0.61) 50%,
+    rgba(0, 212, 255, 0.63) 100%
+  );
+  padding: 20px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.nav-link {
+  color: #333;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: all 300ms ease;
+}
+
+.nav-link:hover {
+  background: rgba(230, 126, 34, 0.1);
+  color: #e67e22;
+}
+
+.nav-link.router-link-active {
+  background: #e67e22;
+  color: white;
+}
