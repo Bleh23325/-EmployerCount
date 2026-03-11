@@ -143,7 +143,7 @@ import RegistrationAddressForm from './RegistrationAddressForm.vue';
 import FileUploadForm from './FileUploadForm.vue';
 import { EmployeeValidation } from '../composables/EmployeeeValidation';
 import { employeesApi } from '@/services/employeesApi';
-// Импортируем правильные API для справочников
+//API для справочников
 import { departmentsApi } from '@/services/departmentsApi';
 import { organizationsApi } from '@/services/organizationsApi';
 import { positionsApi } from '@/services/positionsApi';
@@ -231,19 +231,13 @@ export default {
 
     // Фильтруем отделы по выбранной организации
     const departmentOptions = computed(() => {
-      console.log('🔄 Вычисление departmentOptions:', {
-        hasOrganization: !!localEmployee.id_organization,
-        organizationId: localEmployee.id_organization,
-        organizationIdType: typeof localEmployee.id_organization,
-        departmentsCount: departments.value?.length || 0
-      });
       
       if (!localEmployee.id_organization) {
         return [];
       }
       
       if (!departments.value || !Array.isArray(departments.value)) {
-        console.warn('⚠️ departments.value не массив:', departments.value);
+        console.warn('departments.value не массив:', departments.value);
         return [];
       }
       
@@ -253,35 +247,14 @@ export default {
       
       const selectedOrgId = Number(localEmployee.id_organization);
       
-      console.log('🔍 Сравниваем:', {
-        selectedOrgId: selectedOrgId,
-        selectedOrgIdType: typeof selectedOrgId,
-        firstDeptOrgId: departments.value[0]?.id_organization,
-        firstDeptOrgIdType: typeof departments.value[0]?.id_organization
-      });
       
       const filtered = departments.value.filter(dept => {
         const deptOrgId = Number(dept.id_organization);
         const match = deptOrgId === selectedOrgId;
         
-        if (match) {
-          console.log('✅ Найден отдел:', dept.name, 'для организации', selectedOrgId);
-        }
         
         return match;
       });
-      
-      console.log('📊 Отфильтрованные отделы:', filtered);
-      console.log('📊 Количество:', filtered.length);
-      
-      if (filtered.length === 0) {
-        console.log('❌ Нет отделов для организации', selectedOrgId);
-        console.log('📋 Все отделы:', departments.value.map(d => ({
-          name: d.name,
-          orgId: d.id_organization,
-          orgIdType: typeof d.id_organization
-        })));
-      }
       
       // Преобразуем в опции для Selector
       const options = filtered.map(dept => ({
@@ -289,32 +262,23 @@ export default {
         label: dept.name
       }));
       
-      console.log('🎯 Итоговые опции:', options);
       
       return options;
     });
 
     // Сброс отдела при смене организации
     const handleOrganizationChange = (value) => {
-      console.log('📌 handleOrganizationChange:', {
-        значение: value,
-        тип: typeof value
-      });
       
       localEmployee.id_organization = value;
       localEmployee.id_department = '';
       
       validateField('id_organization');
       
-      setTimeout(() => {
-        console.log('🔄 После изменения организации, departmentOptions:', departmentOptions.value);
-      }, 100);
     };
 
     // Загружаем справочники
     const loadDictionaries = async () => {
       try {
-        console.log('🚀 Начинаем загрузку справочников...');
         
         const [orgs, depts, pos] = await Promise.all([
           organizationsApi.getOrganizations(),
@@ -322,26 +286,17 @@ export default {
           positionsApi.getPositions()
         ]);
         
-        console.log('✅ Загруженные организации:', orgs);
-        console.log('✅ Загруженные отделы:', depts);
-        console.log('✅ Загруженные должности:', pos);
         
         // Присваиваем значения
         organizations.value = orgs || [];
         departments.value = depts || [];
         positions.value = pos || [];
         
-        console.log('💾 Данные сохранены:');
-        console.log('  departments.value.length:', departments.value.length);
-        
         // Принудительно вызываем пересчет computed
-        // (просто обращаемся к computed свойству)
-        console.log('🔄 Принудительный пересчет departmentOptions');
         const options = departmentOptions.value;
-        console.log('  Результат пересчета:', options);
         
       } catch (error) {
-        console.error('❌ Ошибка загрузки справочников:', error);
+        console.error('Ошибка загрузки справочников:', error);
       }
     };
 

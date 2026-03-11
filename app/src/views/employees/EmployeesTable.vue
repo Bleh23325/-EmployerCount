@@ -24,59 +24,63 @@
 
         </div>
 
-        <div v-if="loading">
-            Загрузка данных
+        <div class="employees-table-container">
+            <div v-if="loading">
+                Загрузка данных
+            </div>
+
+        
+            <table v-else class="employees-table">
+                <thead>
+                    <tr>
+                        <th class="skrit">Номер</th>
+                        <th>Фамилия</th>
+                        <th>Имя</th>
+                        <th>Отчество</th>
+                        <th>Дата рождения</th>
+                        <th>Организация</th>
+                        <th>Должность</th>
+                        <th>Отдел</th> 
+                        <th>Зарплата</th> 
+                        <th>Подробные данные</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="employee in filteredEmployees" :key="employee?.id">
+                        <td class="skrit">{{ employee.id }}</td>
+                        <td>{{ employee.first_name }}</td>
+                        <td>{{ employee.name }}</td>
+                        <td>{{ employee.patronymic }}</td>
+                        <td>{{ formatDate(employee.date_of_birth) }}</td>
+                        <td>{{ getCurrentOrganization(employee.id) }}</td>
+                        <td>{{ getCurrentPosition(employee.id) }}</td>
+                        <td>{{ getCurrentDepartment(employee.id) }}</td>
+                        <td>{{ getCurrentSalary(employee.id) }}</td>
+                        <td class="action-cell">
+                            <Button @click="viewPassportData(employee.id_passport_data)">
+                                Паспорт
+                            </Button>
+                            <Button @click="viewRegistrationAddress(employee.id_registration_address)" >
+                                Адрес
+                            </Button>
+                            <Button @click="viewEmployeeFiles(employee.id)"  variant="secondary">
+                                Файлы
+                            </Button>
+
+                        </td>
+                        <td>
+                            <Button @click="handleEditEmployee(employee.id)" variant="accent">
+                                Изменить
+                            </Button>
+                            <Button @click="confirmDeleteEmployee(employee?.id, employee?.first_name, employee?.name)" variant="danger">
+                                Уволить
+                            </Button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-
-
-        <table v-else class="employees-table">
-            <thead>
-                <tr>
-                    <th class="skrit">Номер</th>
-                    <th>Фамилия</th>
-                    <th>Имя</th>
-                    <th>Отчество</th>
-                    <th>Дата рождения</th>
-                    <th>Должность</th>
-                    <th>Отдел</th> 
-                    <th>Зарплата</th> 
-                    <th>Подробные данные</th>
-                    <th>Действия</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="employee in filteredEmployees" :key="employee?.id">
-                    <td class="skrit">{{ employee.id }}</td>
-                    <td>{{ employee.first_name }}</td>
-                    <td>{{ employee.name }}</td>
-                    <td>{{ employee.patronymic }}</td>
-                    <td>{{ formatDate(employee.date_of_birth) }}</td>
-                    <td>{{ getCurrentPosition(employee.id) }}</td>
-                    <td>{{ getCurrentDepartment(employee.id) }}</td>
-                    <td>{{ getCurrentSalary(employee.id) }}</td>
-                    <td class="action-cell">
-                        <Button @click="viewPassportData(employee.id_passport_data)">
-                            Паспорт
-                        </Button>
-                        <Button @click="viewRegistrationAddress(employee.id_registration_address)" >
-                            Адрес
-                        </Button>
-                        <Button @click="viewEmployeeFiles(employee.id)"  variant="secondary">
-                            Файлы
-                        </Button>
-
-                    </td>
-                    <td>
-                        <Button @click="handleEditEmployee(employee.id)" variant="accent">
-                            Изменить
-                        </Button>
-                        <Button @click="confirmDeleteEmployee(employee?.id, employee?.first_name, employee?.name)" variant="danger">
-                            Уволить
-                        </Button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
     </div>
 
 
@@ -248,7 +252,19 @@ export default {
             return pos ? pos.name : '—';
         };
 
-        // Методы для получения данных из кадровых операций
+        // Метод для получения данных из кадровых операций
+        const getCurrentOrganization = (employeeId) => {
+            if (!employeeId || !personnelOperations.value) return '—';
+            
+            const op = personnelOperations.value[employeeId];
+            if (!op || !op.id_department) return '—';
+            
+            const dept = departments.value?.find(d => d.id === op.id_department);
+            if (!dept || !dept.id_organization) return '—';
+            
+            const org = organizations.value?.find(o => o.id === dept.id_organization);
+            return org ? org.name : '—';
+        };
         const getCurrentDepartment = (employeeId) => {
             if (!employeeId || !personnelOperations.value) return '—';
             const op = personnelOperations.value[employeeId];
@@ -303,6 +319,7 @@ export default {
             const lowerQuery = query.toLowerCase();
             
             filteredEmployees.value = employees.value.filter(emp => {
+                const organizationName = getCurrentOrganization(emp.id);
                 const departmentName = getCurrentDepartment(emp.id);
                 const positionName = getCurrentPosition(emp.id);
                 
@@ -310,6 +327,7 @@ export default {
                     emp.first_name?.toLowerCase().includes(lowerQuery) ||
                     emp.name?.toLowerCase().includes(lowerQuery) ||
                     emp.patronymic?.toLowerCase().includes(lowerQuery) ||
+                    organizationName?.toLowerCase().includes(lowerQuery) ||
                     departmentName?.toLowerCase().includes(lowerQuery) ||
                     positionName?.toLowerCase().includes(lowerQuery)
                 );
@@ -662,7 +680,10 @@ export default {
         const handleUpdateEmployee = async (updatedData) => {
             try {
                 await employeesApi.updateEmployee(updatedData.id, updatedData);
+                
                 await loadEmployees();
+                
+                await loadPersonnelOperations();
                 
                 if (notificationRef.value) {
                     notificationRef.value.success('Успех', 'Данные сотрудника обновлены', 3000);
@@ -674,6 +695,7 @@ export default {
                 }
             }
         };
+        
 
         onMounted(() => {
             loadEmployees();
@@ -707,6 +729,7 @@ export default {
             getOrganizationName,
             getDepartmentName,
             getPositionName,
+            getCurrentOrganization,
             getCurrentDepartment,
             getCurrentPosition,
             getCurrentSalary,

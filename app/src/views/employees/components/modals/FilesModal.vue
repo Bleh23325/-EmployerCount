@@ -95,11 +95,9 @@ export default {
                 if (!file.file) return null;
                 
                 // Извлекаем savedName из пути
-                // Путь может быть вида: "/uploads/1234567890-имя_файла.jpg"
                 const pathParts = file.file.split('/');
                 const savedName = pathParts[pathParts.length - 1];
                 
-                // Получаем данные из localStorage
                 const files = JSON.parse(localStorage.getItem('uploadedFiles') || '{}');
                 return files[savedName];
             } catch (error) {

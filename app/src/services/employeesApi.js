@@ -195,66 +195,67 @@ export const employeesApi = {
     },
 
 
-async createFullEmployee(employeeData) {
-    try {
-        //паспортные данные
-        const passportResponse = await this.createPassportData(employeeData.passportData);
-        const passportDataId = passportResponse.passport.id; 
+    async createFullEmployee(employeeData) {
+        try {
+            //паспортные данные
+            const passportResponse = await this.createPassportData(employeeData.passportData);
+            const passportDataId = passportResponse.passport.id; 
 
-        // адрес регистрации
-        const addressResponse = await this.createRegistrationAddress(employeeData.addressData);
-        const addressDataId = addressResponse.address.id;
-        
-        //сотрудник
-        const employeeResponse = await this.createEmployee(
-            employeeData, 
-            passportDataId, 
-            addressDataId
-        );
-        const employeeId = employeeResponse.employee.id; 
-
-        //кадровая операция
-        if (employeeData.id_department || employeeData.id_position || employeeData.setting_the_salary) {
-            console.log('Создание кадровой операции для сотрудника:', employeeId);
+            // адрес регистрации
+            const addressResponse = await this.createRegistrationAddress(employeeData.addressData);
+            const addressDataId = addressResponse.address.id;
             
-            await this.createPersonnelOperation({
-                id_employee: employeeId,
-                id_department: employeeData.id_department || null,
-                id_position: employeeData.id_position || null,
-                setting_the_salary: employeeData.setting_the_salary || null,
-                salary_change: null,
-                dismissal_from_work: null,
-                delete_at: null,
-                update_at: null,
-                add_at: new Date().toISOString()
-            });
-        }
+            //сотрудник
+            const employeeResponse = await this.createEmployee(
+                employeeData, 
+                passportDataId, 
+                addressDataId
+            );
+            const employeeId = employeeResponse.employee.id; 
 
-        //файл
-        if (employeeData.files && employeeData.files.length > 0) {
-            for (const file of employeeData.files) {
-                const fullPath = file.fullPath || file.name;
-                await this.createFile({
-                    id_employees: String(employeeId),
-                    name: file.name,
-                    file: fullPath
+            //кадровая операция
+            if (employeeData.id_organization || employeeData.id_department || employeeData.id_position || employeeData.setting_the_salary) {
+                console.log('Создание кадровой операции для сотрудника:', employeeId);
+                
+                await this.createPersonnelOperation({
+                    id_employee: employeeId,
+                    id_organization: employeeData.id_organization || null,
+                    id_department: employeeData.id_department || null,
+                    id_position: employeeData.id_position || null,
+                    setting_the_salary: employeeData.setting_the_salary || null,
+                    salary_change: null,
+                    dismissal_from_work: null,
+                    delete_at: null,
+                    update_at: null,
+                    add_at: new Date().toISOString()
                 });
             }
+
+            //файл
+            if (employeeData.files && employeeData.files.length > 0) {
+                for (const file of employeeData.files) {
+                    const fullPath = file.fullPath || file.name;
+                    await this.createFile({
+                        id_employees: String(employeeId),
+                        name: file.name,
+                        file: fullPath
+                    });
+                }
+            }
+
+            return {
+                success: true,
+                employeeId: employeeId,
+                passportDataId: passportDataId,
+                addressDataId: addressDataId,
+                message: 'Сотрудник успешно создан'
+            };
+
+        } catch (error) {
+            console.error('Ошибка при создании сотрудника:', error);
+            throw error;
         }
-
-        return {
-            success: true,
-            employeeId: employeeId,
-            passportDataId: passportDataId,
-            addressDataId: addressDataId,
-            message: 'Сотрудник успешно создан'
-        };
-
-    } catch (error) {
-        console.error('Ошибка при создании сотрудника:', error);
-        throw error;
-    }
-},
+    },
 
 
     async deleteEmployee(id) {

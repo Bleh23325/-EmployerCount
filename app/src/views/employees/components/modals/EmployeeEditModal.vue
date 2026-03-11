@@ -150,16 +150,48 @@ export default {
                 console.log('Кадровые операции сотрудника:', operations);
                 
                 if (operations && operations.length > 0) {
-                    const latestOp = operations[operations.length - 1];
+                    const sortedOps = [...operations].sort((a, b) => 
+                        new Date(a.add_at) - new Date(b.add_at)
+                    );
+                    
+                    const latestOp = sortedOps[sortedOps.length - 1];
+                    
                     editData.value.id_organization = latestOp.id_organization;
                     editData.value.id_department = latestOp.id_department;
                     editData.value.id_position = latestOp.id_position;
                     editData.value.setting_the_salary = latestOp.setting_the_salary;
+                    
+                } else {
+                    editData.value.id_organization = null;
+                    editData.value.id_department = null;
+                    editData.value.id_position = null;
+                    editData.value.setting_the_salary = null;
                 }
             } catch (error) {
                 console.error('Ошибка загрузки кадровых данных:', error);
             }
         };
+
+        watch(() => props.data, async (newData) => {
+            if (newData) {
+                editData.value = {
+                    id: newData.id,
+                    first_name: newData.first_name || '',
+                    name: newData.name || '',
+                    patronymic: newData.patronymic || '',
+                    date_of_birth: newData.date_of_birth || '',
+                    id_organization: null,
+                    id_department: null,
+                    id_position: null,
+                    setting_the_salary: null
+                };
+                
+                await loadEmployeePersonnelData(newData.id);
+            }
+        }, { 
+            immediate: true,
+            deep: true
+        });
 
         onMounted(() => {
             loadDictionaries();
@@ -192,9 +224,18 @@ export default {
                     date_of_birth: editData.value.date_of_birth
                 });
 
-                if (editData.value.id_department || editData.value.id_position || editData.value.setting_the_salary) {
+                if (editData.value.id_organization || editData.value.id_department || editData.value.id_position || editData.value.setting_the_salary) {
+                    console.log('Создание кадровой операции с данными:', {
+                        id_employee: editData.value.id,
+                        id_organization: editData.value.id_organization,
+                        id_department: editData.value.id_department,
+                        id_position: editData.value.id_position,
+                        setting_the_salary: editData.value.setting_the_salary
+                    });
+
                     await employeesApi.createPersonnelOperation({
                         id_employee: editData.value.id,
+                        id_organization: editData.value.id_organization || null,
                         id_department: editData.value.id_department || null,
                         id_position: editData.value.id_position || null,
                         setting_the_salary: editData.value.setting_the_salary || null,
