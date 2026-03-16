@@ -2,8 +2,8 @@
   <div class="employee-form">
     <!-- Основные данные сотрудника -->
     <Block title="Основные данные">
-      <div class="baseGoriz">
-        <div class="baseVert">
+      <div class="baseVert">
+        <div class="baseGoriz">
           <label>Фамилия <span class="required">*</span></label>
           <Input
             v-model="localEmployee.first_name"
@@ -13,7 +13,7 @@
           />
         </div>
 
-        <div class="baseVert">
+        <div class="baseGoriz">
           <label>Имя <span class="required">*</span></label>
           <Input
             v-model="localEmployee.name"
@@ -23,7 +23,7 @@
           />
         </div>
 
-        <div class="baseVert">
+        <div class="baseGoriz">
           <label>Отчество</label>
           <Input
             v-model="localEmployee.patronymic"
@@ -35,7 +35,7 @@
       </div>
 
       <div class="baseGoriz">
-        <div class="baseVert">
+        <div class="baseGoriz">
           <label>Дата рождения <span class="required">*</span></label>
           <Input
             v-model="localEmployee.date_of_birth"
@@ -444,19 +444,6 @@ export default {
   margin: 0 auto;
 }
 
-.baseGoriz {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 15px;
-  align-items: center;
-}
-
-.baseVert {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
 
 .label {
   min-width: 150px;
